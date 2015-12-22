@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow" />
+    <title>metadata-js</title>
+
+    <style type="text/css">
+
+    </style>
+</head>
+
+<body>
+    <div id="page">
+
+    </div>
+
+
+    <!-- JS Scripts -->
+    <script src="./lib/jquery/jquery-2.1.4.min.js"></script>
+    <script src="./js/helpers.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/obj-empty.js"></script>
+    <script src="./js/obj-models.js"></script>
+    <script src="./js/xpaths.js"></script>
+    <script src="./js/codeslists.js"></script>
+    <script src="./js/MetadataObj.js"></script>
+    <script src="./js/MetadataXml.js"></script>
+    <script language="javascript" type="text/javascript">
+        jQuery.noConflict();
+        (function(jQuery) {
+            jQuery.ajax({
+                url: 'data/test.xml',
+                //async: false,
+                //dataType: "xml",
+                success: function(response) {
+                    // *****************************************************************
+                    // Test de md.MetadataXml
+                    // *****************************************************************
+                    var mdXml = new md.MetadataXml();
+                    mdXml.setXml(response);
+                    var title = mdXml.getTitle();
+                    var abstract = mdXml.getAbstract();
+                    obj = mdXml.getMetadataObj();
+                    console.log('response: ' + response);
+                    console.log('title: ' + title);
+                    console.log('abstract: ' + abstract);
+                    console.log('obj: ');
+                    console.log(obj);
+                    // *****************************************************************
+                    // Test de md.MetadataObj
+                    // *****************************************************************
+                    var mdObj = new md.MetadataObj();
+                    mdObj.setObj(obj);
+                    console.log(mdObj.xml);
+                    /*
+                    console.log(mdObj.getMetadataXml({
+                    append: false
+                    }));
+                    */
+                    var data = mdObj.getMetadataXml({
+                        append: false
+                    });
+                    var myWindow = window.open("data:text/xml," + encodeURIComponent(data));
+                    myWindow.focus();
+                    //mdObj.setBaseXml(xml);
+                    /*
+                        var baseXml = mdObj.getBaseXml();
+                        mdObj.setObj(obj);
+                        mdObj.setTitle(title);
+                        var baseXmlTitle = mdObj.getBaseXmlTitle();
+                        var xml = mdObj.getXml();
+                        var xmlTitle = mdObj.getXmlTitle(title);
+                    */
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    console.log('Data Could Not Be Loaded - ' + textStatus);
+                }
+            });
+            empty = new md.MetadataXml();
+
+
+        })(jQuery);
+    </script>
+</body>
+
+</html>
