@@ -29,6 +29,176 @@
     <script src="./js/MetadataObj.js"></script>
     <script src="./js/MetadataXml.js"></script>
     <script language="javascript" type="text/javascript">
+    /*
+        var xmlObj = {
+            root: {
+                nameSpace: 'ns',
+                nameNode: 'metadata',
+                attributes: {
+                    a_att1: 'att1',
+                    a_att2: 'att2',
+                },
+                children: [{
+                    nameSpace: 'ns',
+                    nameNode: 'child1',
+                    attributes: {
+                        att1: 'att1',
+                        att2: 'att2'
+                    },
+                    children: [{
+                        nameSpace: 'ns',
+                        nameNode: 'child1-1',
+                        attributes: {
+                            att1: 'att1',
+                            att2: 'att2'
+                        },
+                        children: [{
+                            nameSpace: 'ns',
+                            nameNode: 'child1-1-1',
+                            attributes: {
+                                att1: 'att1',
+                                att2: 'att2'
+                            },
+                            textNode: 'child1-1-1'
+                        }, {
+                            nameSpace: 'ns',
+                            nameNode: 'child1-1-2',
+                            attributes: {
+                                att1: 'att1-2',
+                                att2: 'att2-2'
+                            },
+                            textNode: 'child1-1-2'
+                        }]
+                    }, {
+                        nameSpace: 'ns',
+                        nameNode: 'child1-2',
+                        attributes: {
+                            att1: 'att1-2',
+                            att2: 'att2-2'
+                        },
+                        textNode: 'child1-2'
+                    }]
+                }, {
+                    nameSpace: 'ns',
+                    nameNode: 'child2',
+                    attributes: {
+                        att1: 'att1-2',
+                        att2: 'att2-2'
+                    },
+                    children: [{
+                        nameSpace: 'ns',
+                        nameNode: 'child2-1',
+                        attributes: {
+                            att1: 'att1',
+                            att2: 'att2'
+                        },
+                        textNode: 'child2-1'
+                    }, {
+                        nameSpace: 'ns',
+                        nameNode: 'child2-2',
+                        attributes: {
+                            att1: 'att1-2',
+                            att2: 'att2-2'
+                        },
+                        children: [{
+                            nameSpace: 'ns',
+                            nameNode: 'child2-2-1',
+                            attributes: {
+                                att1: 'att1',
+                                att2: 'att2'
+                            },
+                            children: [{
+                                nameSpace: 'ns',
+                                nameNode: 'child2-2-1-1',
+                                attributes: {
+                                    att1: 'att1',
+                                    att2: 'att2'
+                                },
+                                children: [{
+                                    nameSpace: 'ns',
+                                    nameNode: 'child2-2-1-1-1',
+                                    attributes: {
+                                        att1: 'att1',
+                                        att2: 'att2'
+                                    },
+                                    textNode: 'child2-2-1-1-1-1-1-1'
+                                }]
+                            }]
+                        }]
+                    }]
+                }, {
+                    nameSpace: 'ns',
+                    nameNode: 'child3',
+                    attributes: {
+                        att1: 'att1',
+                        att2: 'att2'
+                    }
+                }]
+            }
+        };
+
+        function Obj2Xml(root) {
+            var xml = [];
+            var xmlEndArray = [];
+            var list = [root];
+            var old_level = -1;
+            //var sNodeBegin, sNodeEnd;
+            while (list.length > 0) {
+                var node = list.pop();
+                if (!node.level) node.level = 0;
+                if (node.children) {
+                    // Define node level
+                    for (i in node.children) {
+                        node.children[i].level = node.level + 1;
+                    }
+                    // Add node to list to treat
+                    list = list.concat(node.children.reverse());
+                }
+                // Define node string
+                var str_attributes = '';
+                if (node.nameSpace) {
+                    node.fullName = node.nameSpace + ':' + node.nameNode;
+                    str_attributes += 'xmlns:' + node.nameSpace + '="null"';
+                }
+                if (node.attributes) {
+                    for (var a in node.attributes) {
+                        if (node.attributes[a])
+                            str_attributes += ' ' + a + '="' + node.attributes[a] + '"';
+                    }
+                }
+                var textNode = node.textNode || '';
+                var sNodeBegin = '<' + node.fullName + ' ' + str_attributes + '>';
+                var sNodeEnd = textNode + '</' + node.fullName + '>';
+                // Manage tree crossing
+                if (old_level < node.level) {
+                    xml.push(sNodeBegin);
+                } else if (old_level == node.level) {
+                    xml.push(xmlEndArray.pop());
+                    xml.push(sNodeBegin);
+                } else if (old_level > node.level) {
+                    for (var i = 0; i <= old_level - node.level; i++) {
+                        xml.push(xmlEndArray.pop());
+                    }
+                    // xml.push(xmlEndArray.pop());
+                    xml.push(sNodeBegin);
+                }
+                console.log(xml.join('\n'));
+                console.log(old_level, node.level, xmlEndArray);
+                xmlEndArray.push(sNodeEnd);
+                old_level = node.level;
+            }
+            // Add end of tree
+            for (var i in xmlEndArray.reverse()) {
+                xml.push(xmlEndArray[i]);
+            }
+            return xml.join('\n');
+        }
+        console.log(Obj2Xml(xmlObj.root));
+
+
+        */
+
+
         jQuery.noConflict();
         (function(jQuery) {
             jQuery.ajax({
@@ -55,16 +225,13 @@
                     var mdObj = new md.MetadataObj();
                     mdObj.setObj(obj);
                     console.log(mdObj.xml);
-                    /*
-                    console.log(mdObj.getMetadataXml({
-                    append: false
-                    }));
-                    */
                     var data = mdObj.getMetadataXml({
                         append: false
                     });
+                    console.log(data);
                     var myWindow = window.open("data:text/xml," + encodeURIComponent(data));
                     myWindow.focus();
+
                     //mdObj.setBaseXml(xml);
                     /*
                         var baseXml = mdObj.getBaseXml();

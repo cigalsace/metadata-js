@@ -53,602 +53,372 @@ jQuery(function(md, undefined) {
 
     /**
      * Get XML file
-     * @param {Object} conf - configuration object
-     * var conf = {
+     * @param {Object} options - configuration object
+     * var options = {
      * 		'append': false // if false, remove items in node before add new one
      * 	};
      * @return {String} XML metadata file content or False
      */
-    md.MetadataObj.prototype.getMetadataXml = function(conf) {
-        var append = conf.append || false;
+    md.MetadataObj.prototype.getMetadataXml = function(options) {
+        var append = options.append || false;
         var $xmlDoc = jQuery.parseXML(this.xml);
         var $xml = jQuery($xmlDoc);
         var $root = $xml.find(':root');
 
         // md_fileidentifier
-        var $md_fileidentifier = $xml.find(md.xpaths.md_fileidentifier).remove();
-        $root.append(this.getXmlMdFileIdentifier());
+        var $md_fileidentifier = $root.find(md.xpaths.mdFileIdentifier).remove();
+        var md_fileidentifier = this.checkValue_(this.obj, 'md_fileidentifier', md.guid());
+        $root.append(this.convertObj2Xml(this.getXmlObjFileIdentifier(md_fileidentifier)));
 
         // md_language
-        var $md_language = $xml.find(md.xpaths.md_language).remove();
-        $root.append(this.getXmlMdLanguage());
+        var $md_language = $root.find(md.xpaths.mdLanguage).remove();
+        var md_language = this.checkValue_(this.obj, 'md_language', md.config.userLanguage);
+        $root.append(this.convertObj2Xml(this.getXmlObjLanguage(this, md_language)));
 
         // md_characterset
-        var $md_characterset = $xml.find(md.xpaths.md_characterset).remove();
-        $root.append(this.getXmlMdCharacterSet());
+        var $md_characterset = $root.find(md.xpaths.mdCharacterSet).remove();
+        var md_characterset = this.checkValue_(this.obj, 'md_characterset', 'utf8');
+        $root.append(this.convertObj2Xml(this.getXmlObjCharacterSet(md_characterset)));
 
         // md_HierarchyLevel
-        var $md_hierarchylevel = $xml.find(md.xpaths.md_hierarchylevel).remove();
-        $root.append(this.getXmlMdHierarchyLevel());
+        var $md_hierarchylevel = $root.find(md.xpaths.mdHierarchyLevel).remove();
+        var md_hierarchylevel = this.checkValue_(this.obj, 'md_hierarchylevel');
+        $root.append(this.convertObj2Xml(this.getXmlObjHierarchyLevel(md_hierarchylevel)));
 
+        // md_contacts
+        if (!append) $root.find(md.xpaths.mdContacts).remove();
+        $root.append(this.convertObj2Xml(this.getXmlObjContacts('md_contacts')));
 
-        /*
-        // #TODO: md_contacts
-        var md_contacts = xmlContacts(metadata.md_contacts, 'md', errors);
-        xml += md_contacts.xml;
-        errors = md_contacts.errors;
+        // md_datestamp
+        if (!append) $root.find(md.xpaths.mdDateStamp).remove();
+        var md_datestamp = this.checkValue_(this.obj, 'md_datestamp', this.getCurrentDate());
+        $root.append(this.convertObj2Xml(this.getXmlObjDateStamp(md_datestamp)));
 
-        // #TODO: md_datestamp
-        if (!metadata.md_datestamp) {
-            var currentTime = new Date();
-            var month = ((currentTime.getMonth() + 1) < 10 ? '0' : '') + (currentTime.getMonth() + 1);
-            var day = currentTime.getDate();
-            var year = currentTime.getFullYear();
-            metadata.md_datestamp = year + '-' + month + '-' + day;
-            errors.push('md_datestamp');
-        }
-        xml += '<gmd:dateStamp><gco:Date>' + metadata.md_datestamp + '</gco:Date></gmd:dateStamp>\n';
+        // md_standardname
+        if (!append) $root.find(md.xpaths.mdStandardName).remove();
+        var md_standardname = this.checkValue_(this.obj, 'md_standardname');
+        $root.append(this.convertObj2Xml(this.getXmlObjMdStandardName(md_standardname)));
 
-        // #TODO: md_standardname
-        if (metadata.md_standardname) {
-            xml += '<gmd:metadataStandardName><gco:CharacterString>' + metadata.md_standardname + '</gco:CharacterString></gmd:metadataStandardName>\n';
-        } else {
-            errors.push('md_standardname');
-        }
-
-        // #TODO: md_standardversion
-        if (metadata.md_standardversion) {
-            xml += '<gmd:metadataStandardVersion><gco:CharacterString>' + metadata.md_standardversion + '</gco:CharacterString></gmd:metadataStandardVersion>\n';
-        } else {
-            errors.push('md_standardversion');
-        }
+        // md_standardversion
+        if (!append) $root.find(md.xpaths.mdStandardVersion).remove();
+        var md_standardversion = this.checkValue_(this.obj, 'md_standardversion');
+        $root.append(this.convertObj2Xml(this.getXmlObjMdStandardVersion(md_standardversion)));
 
         // DATA
-        // #TODO: data_referencesystem
-        var data_referencesystems_error = 1;
-        if (metadata.data_referencesystems) {
-            metadata.data_referencesystems.forEach(function(referencesystem, key) {
-                if (referencesystem) {
-                    data_referencesystems_error = 0;
-                    xml += '<gmd:referenceSystemInfo><gmd:MD_ReferenceSystem>\n';
-                    xml += '<gmd:referenceSystemIdentifier><gmd:RS_Identifier>\n';
-                    xml += '<gmd:code><gco:CharacterString>' + referencesystem.code + '</gco:CharacterString></gmd:code>\n';
-                    xml += '</gmd:RS_Identifier></gmd:referenceSystemIdentifier>\n';
-                    xml += '</gmd:MD_ReferenceSystem></gmd:referenceSystemInfo>\n';
-                }
-            });
-        }
-        if (data_referencesystems_error) {
-            errors.push('data_referencesystems');
-        }
+        // data_referencesystem
+        if (!append) $root.find(md.xpaths.dataReferenceSystems).remove();
+        $root.append(this.getXmlList({
+            name: 'data_referencesystems',
+            getXmlObj: this.getXmlObjDataReferenceSystem
+        }));
 
         // IDENTIFICATION INFO
-        xml += '<gmd:identificationInfo><gmd:MD_DataIdentification>\n';
-        xml += '<gmd:citation><gmd:CI_Citation>\n';
+        var mdDataIdentification = {
+            nameSpace: 'gmd',
+            nameNode: 'identificationInfo',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_DataIdentification'
+            }]
+        };
+        var $md_dataidentification = this.addNodeIfNotExists($root, md.xpaths.dataMdIdentification, mdDataIdentification);
 
-        // #TODO: data_title
-        if (metadata.data_title) {
-            xml += '<gmd:title><gco:CharacterString>' + metadata.data_title + '</gco:CharacterString></gmd:title>\n';
-        } else {
-            errors.push('data_title');
-        }
+        // CI_CITAION
+        var ciCitation = {
+            nameSpace: 'gmd',
+            nameNode: 'citation',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'CI_Citation'
+            }]
+        };
+        var $ci_citation = this.addNodeIfNotExists($md_dataidentification, md.xpaths.dataCiCitation, ciCitation);
 
-        // #TODO: data_dates
-        // Init data_dates
-        metadata.data_dates = [];
-        // data_DateCreation / data_DateRevision / data_DatePublication
-        if (metadata.data_datecreation) {
-            var data_datecreation = xmlDataDate(metadata.data_datecreation, 'creation');
-            metadata.data_dates.push(data_datecreation);
-        }
-        if (metadata.data_daterevision) {
-            var data_daterevision = xmlDataDate(metadata.data_daterevision, 'revision');
-            metadata.data_dates.push(data_daterevision);
-        }
-        if (metadata.data_datepublication) {
-            var data_datepublication = xmlDataDate(metadata.data_datepublication, 'publication');
-            metadata.data_dates.push(data_datepublication);
-        }
+        // data_title
+        if (!append) $root.find(md.xpaths.dataTitle).remove();
+        var data_title = this.checkValue_(this.obj, 'data_title');
+        $ci_citation.append(this.convertObj2Xml(this.getXmlObjDataTitle(data_title)));
 
-        var data_dates_error = 1;
-        if (metadata.data_dates) {
-            metadata.data_dates.forEach(function(date, key) {
-                if (date) {
-                    data_dates_error = 0;
-                    xml += '<gmd:date><gmd:CI_Date>\n';
-                    xml += '<gmd:date><gco:Date>' + date.date + '</gco:Date></gmd:date>\n';
-                    xml += '<gmd:dateType><gmd:CI_DateTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#CI_DateTypeCode" codeListValue="' + date.type + '">' + date.type + '</gmd:CI_DateTypeCode></gmd:dateType>\n';
-                    xml += '</gmd:CI_Date></gmd:date>\n';
-                }
-            });
-        }
-        if (data_dates_error) {
-            errors.push('data_dates');
-        }
+        // data_dates
+        if (!append) $root.find(md.xpaths.dataDates).remove();
+        $ci_citation.append(this.getXmlList({
+            name: 'data_dates',
+            getXmlObj: this.getXmlObjDataDate
+        }));
 
-        // #TODO: data_Identifier
-        // Renseigner md_fileidentifier comme data_Identifier par défaut si n'existe pas + message
-        if (!metadata.data_identifiers) {
-            metadata.data_identifiers = [{
-                code: metadata.md_fileidentifier,
-                codespace: 'md_fileidentifier'
-            }];
-            errors.push('data_identifiers');
-        }
-        metadata.data_identifiers.forEach(function(identifier, key) {
-            if (identifier.code) {
-                xml += '<gmd:identifier><gmd:RS_Identifier>\n';
-                xml += '<gmd:code><gco:CharacterString>' + identifier.code + '</gco:CharacterString></gmd:code>\n';
-                xml += '<gmd:codeSpace><gco:CharacterString>' + identifier.codespace + '</gco:CharacterString></gmd:codeSpace>\n';
-                xml += '</gmd:RS_Identifier></gmd:identifier>\n';
-            }
-        });
-        xml += '</gmd:CI_Citation></gmd:citation>\n';
+        // data_identifier
+        var default_dataIdentifiers = [{
+            code: md_fileidentifier,
+            codespace: 'md_fileidentifier'
+        }];
+        if (!append) $root.find(md.xpaths.dataIdentifiers).remove();
+        $ci_citation.append(this.getXmlList({
+            name: 'data_identifiers',
+            obj: this.checkValue_(this.obj, 'data_identifiers', default_dataIdentifiers),
+            getXmlObj: this.getXmlObjDataIdentifier
+        }));
 
-        // #TODO: data_abstract
-        if (metadata.data_abstract) {
-            xml += '<gmd:abstract><gco:CharacterString>' + metadata.data_abstract + '</gco:CharacterString></gmd:abstract>\n';
-        } else {
-            errors.push('data_abstract');
-        }
+        // data_abstract
+        if (!append) $root.find(md.xpaths.dataAbstract).remove();
+        var data_abstract = this.checkValue_(this.obj, 'data_abstract');
+        $md_dataidentification.append(this.convertObj2Xml(this.getXmlObjDataAbstract()));
 
-        // #TODO: data_PointOfContact
-        if (metadata.data_contacts) {
-            var data_contacts = xmlContacts(metadata.data_contacts, 'data', errors);
-            xml += data_contacts.xml;
-            errors = data_contacts.errors;
-        }
-        // #TODO: data_maintenancefrequencycode
-        if (metadata.data_maintenancefrequencycode) {
-            xml += '<gmd:resourceMaintenance>\n';
-            xml += '<gmd:MD_MaintenanceInformation>\n';
-            xml += '<gmd:maintenanceAndUpdateFrequency>\n';
-            xml += '<gmd:MD_MaintenanceFrequencyCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_MaintenanceFrequencyCode" codeListValue="' + metadata.data_maintenancefrequencycode + '">' + metadata.data_maintenancefrequencycode + '</gmd:MD_MaintenanceFrequencyCode>\n';
-            xml += '</gmd:maintenanceAndUpdateFrequency>\n';
-            xml += '</gmd:MD_MaintenanceInformation>\n';
-            xml += '</gmd:resourceMaintenance>\n';
-        } else {
-            errors.push('data_maintenancefrequencycode');
-        }
+        // data_contacts
+        if (!append) $root.find(md.xpaths.dataContacts).remove();
+        $md_dataidentification.append(this.convertObj2Xml(this.getXmlObjContacts('data_pointofcontacts')));
 
-        // #TODO: data_browsegraphic
-        if (metadata.data_browsegraphics) {
-            metadata.data_browsegraphics.forEach(function(browsegraphic, key) {
-                if (browsegraphic.url) {
-                    if (!browsegraphic.type) {
-                        var parts = browsegraphic.url.split('.');
-                        browsegraphic.type = parts[(parts.length - 1)];
-                    }
-                    xml += '<gmd:graphicOverview>\n';
-                    xml += '<gmd:MD_BrowseGraphic>\n';
-                    xml += '<gmd:fileName>\n';
-                    xml += '<gco:CharacterString>' + browsegraphic.url + '</gco:CharacterString>\n';
-                    xml += '</gmd:fileName>\n';
-                    xml += '<gmd:fileDescription>\n';
-                    xml += '<gco:CharacterString>' + browsegraphic.description + '</gco:CharacterString>\n';
-                    xml += '</gmd:fileDescription>\n';
-                    xml += '<gmd:fileType>\n';
-                    xml += '<gco:CharacterString>' + browsegraphic.type + '</gco:CharacterString>\n';
-                    xml += '</gmd:fileType>\n';
-                    xml += '</gmd:MD_BrowseGraphic>\n';
-                    xml += '</gmd:graphicOverview>\n';
-                } else {
-                    errors.push('data_browsegraphics');
-                }
-            });
-        }
+        // data_maintenancefrequencycode
+        if (!append) $root.find(md.xpaths.dataMaintenanceFrequency).remove();
+        var data_maintenancefrequencycode = this.checkValue_(this.obj, 'data_maintenancefrequencycode', 'unknown');
+        $md_dataidentification.append(this.convertObj2Xml(this.getXmlObjDataMaintenancefrequencyCode(data_maintenancefrequencycode)));
 
-        // #TODO: Keywords
-        var data_keywords_error = 1;
+        // data_browsegraphics
+        if (!append) $root.find(md.xpaths.dataBrowseGraphics).remove();
+        $md_dataidentification.append(this.getXmlList({
+            name: 'data_browsegraphics',
+            getXmlObj: this.getXmlObjDataBrowseGraphic
+        }));
 
-        // #TODO: data_inspirekeywords
-        var inspire_keywords = [];
-        if (metadata.data_inspirekeywords) {
-            data_keywords_error = 0;
-            metadata.data_inspirekeywords.forEach(function(inspirekeyword, key) {
-                var inspire_keyword = {
-                    "keyword": inspirekeyword.keyword,
-                    "type": inspirekeyword.type,
-                    "thesaurus_name": "GEMET - INSPIRE themes, version 1.0",
-                    "thesaurus_dates": [{
-                        "type": "publication",
-                        "date": "2008-06-01"
-                    }]
-                };
-                inspire_keywords.push(inspire_keyword);
-            });
-        } else {
-            errors.push('data_inspirekeywords');
-        }
-        var data_inspirekeywords = xmlKeywords(inspire_keywords, errors);
-        xml += data_inspirekeywords.xml;
-        errors = data_inspirekeywords.errors;
+        // data_keywords
+        if (!append) $root.find(md.xpaths.dataKeywords).remove();
+        $md_dataidentification.append(this.getXmlList({
+            name: 'data_keywords',
+            getXmlObj: this.getXmlObjDataKeyword
+        }));
+        $md_dataidentification.append(this.getXmlList({
+            name: 'data_inspirekeywords',
+            getXmlObj: this.getXmlObjDataKeyword
+        }));
 
-        // #TODO: data_keywords_list
-        var data_keywords_list = [];
-        if (metadata.data_keywords_list) {
-            var keywords_list = metadata.data_keywords_list.split(',');
-            keywords_list.forEach(function(keyword, key) {
-                var data_keyword = {
-                    keyword: keyword.trim(),
-                    type: '',
-                    thesaurus_name: '',
-                    thesaurus_dates: [{
-                        type: '',
-                        date: ''
-                    }]
-                };
-                data_keywords_list.push(data_keyword);
-            });
-        }
-        data_keywords_list = xmlKeywords(data_keywords_list, errors);
-        xml += data_keywords_list.xml;
-        errors = data_keywords_list.errors;
+        // data_uselimitations
+        if (!append) $root.find(md.xpaths.dataUseLimitations).remove();
+        $md_dataidentification.append(this.getXmlList({
+            name: 'data_uselimitations',
+            getXmlObj: this.getXmlObjUseLimitation
+        }));
 
-        // #TODO: data_keywords
-        if (metadata.data_keywords) {
-            var data_keywords = xmlKeywords(metadata.data_keywords, errors);
-            xml += data_keywords.xml;
-            errors = data_keywords.errors;
-        }
+        // md_legalconstraints
+        var mdLegalConstraints = {
+            nameSpace: 'gmd',
+            nameNode: 'resourceConstraints',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_LegalConstraints'
+            }]
+        };
+        var $md_legalconstraints = this.addNodeIfNotExists($md_dataidentification, md.xpaths.dataMdLegalConstraints, mdLegalConstraints);
 
-        // resourceConstraints: le principe retenu ici est d'utiliser 1 <resourceConstraints> pour chaque type de contrainte: <MD_Constraints>, <MD_LegalConstraints> et <MD_SecurityConstraints>
-        // resourceConstraints > Constraints
-        // #TODO: data_uselimitations
-        var data_uselimitations_error = 1;
-        if (metadata.data_uselimitations) {
-            metadata.data_uselimitations.forEach(function(uselimitation, key) {
-                if (uselimitation) {
-                    data_uselimitations_error = 0;
-                    xml += '<gmd:resourceConstraints><gmd:MD_Constraints>\n';
-                    xml += '<gmd:useLimitation><gco:CharacterString>' + uselimitation + '</gco:CharacterString></gmd:useLimitation>\n';
-                    xml += '</gmd:MD_Constraints></gmd:resourceConstraints>\n';
-                }
-            });
-        }
-        if (data_uselimitations_error) {
-            errors.push('data_uselimitations');
-        }
+        // data_legal_uselimitations
+        if (!append) $root.find(md.xpaths.dataLegalUseLimitations).remove();
+        $md_legalconstraints.append(this.getXmlList({
+            name: 'data_legal_uselimitations',
+            getXmlObj: this.getXmlObjUseLimitation
+        }));
 
-        // ResourceConstraints > LegalConstraints
-        xml += '<gmd:resourceConstraints><gmd:MD_LegalConstraints>\n';
+        // data_legal_useconstraints
+        if (!append) $root.find(md.xpaths.dataLegalUseConstraints).remove();
+        $md_legalconstraints.append(this.getXmlList({
+            name: 'data_legal_useconstraints',
+            getXmlObj: this.getXmlObjUseConstraint
+        }));
 
-        // #TODO: data_legal_useLimitations
-        var data_legal_uselimitations_error = 1;
-        if (metadata.data_legal_uselimitations) {
-            metadata.data_legal_uselimitations.forEach(function(legal_uselimitation, key) {
-                if (legal_uselimitation) {
-                    data_legal_uselimitations_error = 0;
-                    xml += '<gmd:useLimitation>\n';
-                    xml += '<gco:CharacterString>' + legal_uselimitation + '</gco:CharacterString>\n';
-                    xml += '<gmd:useLimitation>\n';
-                }
-            });
-        }
-        if (data_legal_uselimitations_error) {
-            errors.push('data_legal_useLimitations');
-        }
+        // data_legal_accessconstraints & data_legal_accessinspireconstraints
+        if (!append) $root.find(md.xpaths.dataLegalAccessConstraints).remove();
+        $md_legalconstraints.append(this.getXmlList({
+            name: 'data_legal_accessconstraints',
+            getXmlObj: this.getXmlObjAccessConstraint
+        }));
 
-        // #TODO: data_legal_accessconstraints
-        var data_legal_accessconstraints_error = 1;
-        if (metadata.data_legal_accessconstraints) {
-            metadata.data_legal_accessconstraints.forEach(function(legal_accessconstraint, key) {
-                if (legal_accessconstraint) {
-                    data_legal_accessconstraints_error = 0;
-                    xml += '<gmd:accessConstraints>\n';
-                    xml += '<gmd:MD_RestrictionCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_RestrictionCode" codeListValue="' + legal_accessconstraint + '">' + legal_accessconstraint + '</gmd:MD_RestrictionCode>\n';
-                    xml += '</gmd:accessConstraints>\n';
-                }
-            });
-        }
-        if (data_legal_accessconstraints_error) {
-            errors.push('data_legal_accessconstraints');
-        }
+        // data_legal_accessotherconstraints
+        if (!append) $root.find(md.xpaths.dataLegalAccessOtherConstraints).remove();
+        $md_legalconstraints.append(this.getXmlList({
+            name: 'data_legal_accessotherconstraints',
+            getXmlObj: this.getXmlObjOtherConstraint
+        }));
+        $md_legalconstraints.append(this.getXmlList({
+            name: 'data_legal_accessinspireconstraints',
+            getXmlObj: this.getXmlObjOtherConstraint
+        }));
 
-        // #TODO: data_legal_useconstraints
-        var data_legal_useconstraints_error = 1;
-        if (metadata.data_legal_useconstraints) {
-            metadata.data_legal_useconstraints.forEach(function(legal_useconstraint, key) {
-                if (legal_useconstraint) {
-                    data_legal_useconstraints_error = 0;
-                    xml += '<gmd:useConstraints>\n';
-                    xml += '<gmd:MD_RestrictionCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_RestrictionCode" codeListValue="' + legal_useconstraint + '">' + legal_useconstraint + '</gmd:MD_RestrictionCode>\n';
-                    xml += '</gmd:useConstraints>\n';
-                }
-            });
-        }
-        if (data_legal_useconstraints_error) {
-            errors.push('data_legal_useconstraints');
-        }
+        // dataMdSecurityConstraints
+        var mdSecurityConstraints = {
+            nameSpace: 'gmd',
+            nameNode: 'resourceConstraints',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_SecurityConstraints'
+            }]
+        };
+        var $md_securityconstraints = this.addNodeIfNotExists($md_dataidentification, md.xpaths.dataMdSecurityConstraints, mdSecurityConstraints);
 
-        // #TODO: data_legal_accessinspireconstraints
-        if (metadata.data_legal_accessinspireconstraints) {
-            metadata.data_legal_accessinspireconstraints.forEach(function(legal_accessinspireconstraint, key) {
-                metadata.data_legal_accessotherconstraints.push(legal_accessinspireconstraint);
-            });
-        }
-        // #TODO: data_legal_accessotherconstraints
-        var data_legal_accessotherconstraints_error = 1;
-        if (metadata.data_legal_accessotherconstraints) {
-            metadata.data_legal_accessotherconstraints.forEach(function(legal_accessotherconstraint, key) {
-                if (legal_accessotherconstraint) {
-                    data_legal_accessotherconstraints_error = 0;
-                    xml += '<gmd:otherConstraints><gco:CharacterString>' + legal_accessotherconstraint + '</gco:CharacterString></gmd:otherConstraints>\n';
-                }
-            });
-        }
-        if (data_legal_accessotherconstraints_error) {
-            errors.push('data_legal_accessotherconstraints');
-        }
+        // data_security_classification
+        if (!append) $root.find(md.xpaths.dataSecurity_Classification).remove();
+        var data_security_classification = this.checkValue_(this.obj, 'data_security_classification', 'unclassified');
+        $md_securityconstraints.append(this.convertObj2Xml(this.getXmlObjClassification(data_security_classification)));
 
-        xml += '</gmd:MD_LegalConstraints></gmd:resourceConstraints>\n';
+        // data_security_uselimitations
+        if (!append) $root.find(md.xpaths.dataSecurity_UseLimitations).remove();
+        $md_securityconstraints.append(this.getXmlList({
+            name: 'data_security_uselimitations',
+            getXmlObj: this.getXmlObjUseLimitation
+        }));
 
-        // ResourceConstraints > SecurityConstraints
-        // #TODO: data_security_uselimitations
+        // data_SpatialRepresentationType
+        if (!append) $root.find(md.xpaths.dataSpatialRepresentationType).remove();
+        var data_spatialrepresentationtype = this.checkValue_(this.obj, 'data_spatialrepresentationtype');
+        $md_dataidentification.append(this.convertObj2Xml(this.getXmlObjSpatialRepresentationType(data_spatialrepresentationtype)));
 
-        // #TODO: data_security_classification
-        if (metadata.data_security_classification) {
-            xml += '<gmd:resourceConstraints><gmd:MD_SecurityConstraints><gmd:classification>\n';
-            xml += '<gmd:MD_ClassificationCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ClassificationCode" codeListValue="' + metadata.data_security_classification + '">' + metadata.data_security_classification + '</gmd:MD_ClassificationCode>\n';
-            xml += '</gmd:classification></gmd:MD_SecurityConstraints></gmd:resourceConstraints>\n';
-        } else {
-            errors.push('data_security_classification');
-        }
+        // data_ScaleDenominator / data_ScaleDistance
+        // dataMdResolution
+        var mdResolution = {
+            nameSpace: 'gmd',
+            nameNode: 'spatialResolution',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_Resolution'
+            }]
+        };
+        var $md_resolution = this.addNodeIfNotExists($md_dataidentification, md.xpaths.dataMdResolution, mdResolution);
+        if (!append) $root.find(md.xpaths.dataScaleDenominator).remove();
+        var data_scaledenominator = this.checkValue_(this.obj, 'data_scaledenominator');
+        $md_resolution.append(this.convertObj2Xml(this.getXmlObjScaleDenominator(data_scaledenominator)));
+        if (!append) $root.find(md.xpaths.dataScaleDistance).remove();
+        var data_scaledistance = this.checkValue_(this.obj, 'data_scaledistance');
+        $md_resolution.append(this.convertObj2Xml(this.getXmlObjScaleDistance(data_scaledistance)));
 
-        // Fin de data_ResourceConstraints
+        // data_Languages
+        if (!append) $root.find(md.xpaths.dataLanguages).remove();
+        $md_dataidentification.append(this.getXmlList({
+            name: 'data_languages',
+            getXmlObj: this.getXmlObjLanguage
+        }));
 
-        // #TODO: data_SpatialRepresentationType
-        if (metadata.data_spatialrepresentationtype) {
-            xml = xml + '<gmd:spatialRepresentationType>\n';
-            xml = xml + '<gmd:MD_SpatialRepresentationTypeCode codeList="http://www.isotc211.org/2005/resources/codeList.xml#MD_SpatialRepresentationTypeCode" codeListValue="' + metadata.data_spatialrepresentationtype + '">' + metadata.data_spatialrepresentationtype + '</gmd:MD_SpatialRepresentationTypeCode>\n';
-            xml = xml + '</gmd:spatialRepresentationType>\n';
-        } else {
-            errors.push('data_spatialrepresentationtype');
-        }
+        // data_CharacterSet
+        if (!append) $root.find(md.xpaths.dataCharacterSet).remove();
+        var data_characterset = this.checkValue_(this.obj, 'data_characterset', md_characterset);
+        $md_dataidentification.append(this.convertObj2Xml(this.getXmlObjCharacterSet(data_characterset)));
 
-        // #TODO: data_ScaleDenominator / data_ScaleDistance
-        if (metadata.data_scaledenominator || metadata.data_scaledistance) {
-            xml = xml + '<gmd:spatialResolution><gmd:MD_Resolution>\n';
-            if (metadata.data_scaledenominator) {
-                xml = xml + '<gmd:equivalentScale><gmd:MD_RepresentativeFraction>\n';
-                xml = xml + '<gmd:denominator><gco:Integer>' + metadata.data_scaledenominator + '</gco:Integer></gmd:denominator>\n';
-                xml = xml + '</gmd:MD_RepresentativeFraction></gmd:equivalentScale>\n';
-            }
-            if (metadata.data_scaledistance) {
-                xml = xml + '<gmd:distance><gco:Distance uom="http://standards.iso.org/ittf/PublicityAvailableStandards/ISO_19139_Schemas/resources.uom/ML_gmxUom.xml#m">' + metadata.data_scaledistance + '</gco:Distance></gmd:distance>\n';
-            }
-            xml = xml + '</gmd:MD_Resolution></gmd:spatialResolution>\n';
-        } else {
-            errors.push('data_scales');
-        }
+        // data_topiccategories
+        if (!append) $root.find(md.xpaths.dataTopicCategories).remove();
+        $md_dataidentification.append(this.getXmlList({
+            name: 'data_topiccategories',
+            getXmlObj: this.getXmlObjTopicCategory
+        }));
 
-        // #TODO: data_Languages
-        if (!metadata.data_languages) {
-            metadata.data_languages[0] = config.userLang;
-            errors.push('data_languages');
-        }
-        metadata.data_languages.forEach(function(language, key) {
-            if (language) {
-                data_languages_error = 0;
-                xml += '<gmd:language>\n';
-                xml += '<gmd:LanguageCode codeList="http://www.loc.gov/standards/iso639-2/" codeListValue="' + language + '">' + language + '</gmd:LanguageCode>\n';
-                xml += '</gmd:language>\n';
-            }
-        });
-
-        // #TODO: data_CharacterSet
-        if (metadata.data_characterset) {
-            xml = xml + '<gmd:spatialRepresentationType>\n';
-            xml = xml + '<gmd:MD_SpatialRepresentationTypeCode codeList="http://www.isotc211.org/2005/resources/codeList.xml#MD_SpatialRepresentationTypeCode" codeListValue="' + metadata.data_characterset + '">' + metadata.data_characterset + '</gmd:MD_SpatialRepresentationTypeCode>\n';
-            xml = xml + '</gmd:spatialRepresentationType>\n';
-        } else {
-            errors.push('data_spatialrepresentationtype');
-        }
-
-        // #TODO: data_topiccategories_error = 1;
-        if (metadata.data_topiccategories) {
-            metadata.data_topiccategories.forEach(function(topiccategory, key) {
-                if (topiccategory) {
-                    data_topiccategories_error = 0;
-                    xml += '<gmd:topicCategory><gmd:MD_TopicCategoryCode>' + topiccategory + '</gmd:MD_TopicCategoryCode></gmd:topicCategory>\n';
-                }
-            });
-        } else {
-            errors.push('data_topiccategories');
-        }
-
+        // data_geographicextents
+        // #TODO: corriger pb de suppression de tous les extents
+        if (!append) $root.find(md.xpaths.Extents).remove();
+        $md_dataidentification.append(this.getXmlList({
+            name: 'data_geographicextents',
+            getXmlObj: this.getXmlObjGeographicExtent
+        }));
+        // data_temporalextents
+        // if (!append) $root.find(md.xpaths.Extents).remove();
+        $md_dataidentification.append(this.getXmlList({
+            name: 'data_temporalextents',
+            getXmlObj: this.getXmlObjTemporalExtent
+        }));
         // data_Extent
-        // #TODO: data_geographicextents
-        data_geographicextents_error = 1;
-        if (metadata.data_geographicextents) {
-            metadata.data_geographicextents.forEach(function(geographicextent, key) {
-                if (geographicextent.xmin && geographicextent.xmax && geographicextent.ymin && geographicextent.ymax) {
-                    data_geographicextents_error = 0;
-                    xml += '<gmd:extent><gmd:EX_Extent>\n';
-                    xml += '<gmd:description><gco:CharacterString>' + geographicextent.name + '</gco:CharacterString></gmd:description>\n';
-                    xml += '<gmd:geographicElement><gmd:EX_GeographicBoundingBox>\n';
-                    xml += '<gmd:westBoundLongitude><gco:Decimal>' + geographicextent.xmin + '</gco:Decimal></gmd:westBoundLongitude>\n';
-                    xml += '<gmd:eastBoundLongitude><gco:Decimal>' + geographicextent.xmax + '</gco:Decimal></gmd:eastBoundLongitude>\n';
-                    xml += '<gmd:southBoundLatitude><gco:Decimal>' + geographicextent.ymin + '</gco:Decimal></gmd:southBoundLatitude>\n';
-                    xml += '<gmd:northBoundLatitude><gco:Decimal>' + geographicextent.ymax + '</gco:Decimal></gmd:northBoundLatitude>\n';
-                    xml += '</gmd:EX_GeographicBoundingBox></gmd:geographicElement>\n';
-                    xml += '</gmd:EX_Extent></gmd:extent>\n';
-                }
-            });
-        }
-        if (data_geographicextents_error) {
-            errors.push('data_geographicextents');
-        }
-
-        // #TODO: data_temporalextents
-        data_temporalextents_error = 1;
-        if (metadata.data_temporalextents) {
-            metadata.data_temporalextents.forEach(function(temporalextent, key) {
-                if (temporalextent.description) {
-                    data_temporalextents_error = 0;
-                    xml += '<gmd:extent><gmd:EX_Extent>\n';
-                    xml += '<gmd:description><gco:CharacterString>' + temporalextent.description + '</gco:CharacterString></gmd:description>\n';
-                    xml += '<gmd:temporalElement><gmd:EX_TemporalExtent>\n';
-                    xml += '<gmd:extent><gml:TimePeriod xsi:type="gml:TimePeriodType" gml:id="TemporalId_' + key + '">\n';
-                    xml += '<gml:beginPosition>' + temporalextent.begin + '</gml:beginPosition>\n';
-                    xml += '<gml:endPosition>' + temporalextent.end + '</gml:endPosition>\n';
-                    xml += '</gml:TimePeriod></gmd:extent>\n';
-                    xml += '</gmd:EX_TemporalExtent></gmd:temporalElement>\n';
-                    xml += '</gmd:EX_Extent></gmd:extent>\n';
-                }
-            });
-        }
-        if (data_temporalextents_error) {
-            errors.push('data_temporalextents');
-        }
-
-        // #TODO: data_VerticalExtent
-        // for i in range(1, 20):
-        // e, data_VerticalExtent_Min = _get_xls_value('data_verticalextent'+str(i)+'_min', lst_name, 'string')
-        // e, data_VerticalExtent_Max = _get_xls_value('data_verticalextent'+str(i)+'_max', lst_name, 'string')
-        // e, data_VerticalExtent_Unit = _get_xls_value('data_verticalextent'+str(i)+'_unit', lst_name, 'string')
-        // e, data_VerticalExtent_Ref = _get_xls_value('data_verticalextent'+str(i)+'_ref', lst_name, 'string')
-        // if data_VerticalExtent_Min and data_VerticalExtent_Max and data_VerticalExtent_Unit and data_VerticalExtent_Ref:
-        // xml += '<gmd:extent><gmd:EX_Extent>\n';
-        // xml += '<gmd:verticalElement><gmd:EX_VerticalExtent>\n';
-        // xml += '<gmd:minValue><gco:CharacterString>' + data_VerticalExtent_Min + '</gco:CharacterString></gmd:minValue>\n';
-        // xml += '<gmd:maxValue><gco:CharacterString>' + data_VerticalExtent_Max + '</gco:CharacterString></gmd:maxValue>\n';
-        // xml += '<gmd:uom><gco:CharacterString>' + data_VerticalExtent_Unit + '</gco:CharacterString></gmd:uom>\n';
-        // xml += '<gmd:verticalDatum><gco:CharacterString>' + data_VerticalExtent_Ref + '</gco:CharacterString></gmd:verticalDatum>\n';
-        // xml += '</gmd:EX_VerticalExtent></gmd:verticalElement>\n';
-        // xml += '</gmd:EX_Extent></gmd:extent>\n';
-
-        xml += '</gmd:MD_DataIdentification></gmd:identificationInfo>\n';
+        $md_dataidentification.append(this.getXmlList({
+            name: 'data_verticalextents',
+            getXmlObj: this.getXmlObjVerticalExtent
+        }));
 
         // DISTRIBUTION INFO
-        xml += '<gmd:distributionInfo><gmd:MD_Distribution>\n';
+        var mdDistribution = {
+            nameSpace: 'gmd',
+            nameNode: 'distributionInfo',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_Distribution'
+            }]
+        };
+        var $md_distribution = this.addNodeIfNotExists($root, md.xpaths.dataMdDistribution, mdDistribution);
 
-        // #TODO: data_distformats
-        data_distformats_error = 1;
-        if (metadata.data_distformats) {
-            metadata.data_distformats.forEach(function(distformat, key) {
-                if (distformat.name) {
-                    data_distformats_error = 0;
-                    xml += '<gmd:distributionFormat><gmd:MD_Format>\n';
-                    xml += '<gmd:name><gco:CharacterString>' + distformat.name + '</gco:CharacterString></gmd:name>\n';
-                    xml += '<gmd:version><gco:CharacterString>' + distformat.version + '</gco:CharacterString></gmd:version>\n';
-                    xml += '<gmd:specification><gco:CharacterString>' + distformat.specification + '</gco:CharacterString></gmd:specification>\n';
-                    xml += '</gmd:MD_Format></gmd:distributionFormat>\n';
-                }
-            });
-        }
-        if (data_distformats_error) {
-            errors.push('data_distformats');
-        }
+        // data_distributionformats
+        if (!append) $root.find(md.xpaths.dataDistributionFormats).remove();
+        $md_distribution.append(this.getXmlList({
+            name: 'data_distributionformats',
+            getXmlObj: this.getXmlObjDistributionFormat
+        }));
 
-        xml += '<gmd:transferOptions><gmd:MD_DigitalTransferOptions>\n';
+        // DIGITAL TRANSFERT OPTIONS
+        var MD_DigitalTransferOptions = {
+            nameSpace: 'gmd',
+            nameNode: 'transferOptions',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_DigitalTransferOptions'
+            }]
+        };
+        var $md_digitaltransferoptions = this.addNodeIfNotExists($md_distribution, md.xpaths.dataDigitalTransfertOptions, MD_DigitalTransferOptions);
 
-        // #TODO: data_linkages (url)
-        data_linkages_error = 1;
-        if (metadata.data_linkages) {
-            metadata.data_linkages.forEach(function(linkage, key) {
-                if (linkage.name) {
-                    data_linkages_error = 0;
-                    xml += '<gmd:onLine><gmd:CI_OnlineResource>\n';
-                    xml += '<gmd:linkage><gmd:URL>' + linkage.url + '</gmd:URL></gmd:linkage>\n';
-                    xml += '<gmd:protocol><gco:CharacterString>' + linkage.protocol + '</gco:CharacterString></gmd:protocol>\n';
-                    xml += '<gmd:name><gco:CharacterString>' + linkage.name + '</gco:CharacterString></gmd:name>\n';
-                    xml += '<gmd:description><gco:CharacterString>' + linkage.description + '</gco:CharacterString></gmd:description>\n';
-                    xml += '</gmd:CI_OnlineResource></gmd:onLine>\n';
-                }
-            });
-        }
-        if (data_linkages_error) {
-            errors.push('data_linkages');
-        }
-
-        xml += '</gmd:MD_DigitalTransferOptions></gmd:transferOptions>\n';
-
-        xml += '</gmd:MD_Distribution></gmd:distributionInfo>\n';
+        // data_linkages
+        if (!append) $root.find(md.xpaths.dataLinkages).remove();
+        $md_digitaltransferoptions.append(this.getXmlList({
+            name: 'data_linkages',
+            getXmlObj: this.getXmlObjLinkage
+        }));
 
         // DATA QUALITY INFO
-        xml += '<gmd:dataQualityInfo><gmd:DQ_DataQuality>\n';
+        var DQ_DataQuality = {
+            nameSpace: 'gmd',
+            nameNode: 'dataQualityInfo',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'DQ_DataQuality'
+            }]
+        };
+        var $dq_dataquality = this.addNodeIfNotExists($root, md.xpaths.dataDqDataQuality, DQ_DataQuality);
 
-        // #TODO: DQ_Level
-        if (!metadata.data_dq_level) {
-            metadata.data_dq_level = metadata.md_hierarchylevel;
-            errors.push('data_dq_level'); // valeur par defaut  = hierarchylevel
-        }
-        //if (metadata.data_dq_level) {
-        xml += '<gmd:scope><gmd:DQ_Scope>\n';
-        xml += '<gmd:level><gmd:MD_ScopeCode codeListValue="' + metadata.data_dq_level + '" codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode">' + metadata.data_dq_level + '</gmd:MD_ScopeCode></gmd:level>\n';
-        xml += '</gmd:DQ_Scope></gmd:scope>\n';
-        //}
+        // data_dq_level
+        if (!append) $root.find(md.xpaths.dataDqLevel).remove();
+        var data_dq_level = this.checkValue_(this.obj, 'data_dq_level', md_hierarchylevel);
+        $dq_dataquality.append(this.convertObj2Xml(this.getXmlObjScopeLevel(data_dq_level)));
 
+        /*
         // #TODO: DQ_InspireConformity
         if (metadata.data_dq_inspireconformities) {
             var data_inspireconformities = xmlConformities(metadata.data_dq_inspireconformities, 'inspire', errors);
             xml += data_inspireconformities.xml;
             errors = data_inspireconformities.errors;
         }
-
         // #TODO: DQ_Conformity
         if (metadata.data_dq_conformities) {
             var data_conformities = xmlConformities(metadata.data_dq_conformities, '', errors);
             xml += data_conformities.xml;
             errors = data_conformities.errors;
         }
+        */
 
-        // DQ_Lineage
-        xml += '<gmd:lineage><gmd:LI_Lineage>\n';
+        // DATA QUALITY LINEAGE
+        var DQ_Lineage = {
+            nameSpace: 'gmd',
+            nameNode: 'lineage',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'LI_Lineage'
+            }]
+        };
+        var $li_lineage = this.addNodeIfNotExists($dq_dataquality, md.xpaths.dataLiLineage, DQ_Lineage);
 
-        // #TODO: LI_Statement
-        if (metadata.data_li_statement) {
-            xml += '<gmd:statement><gco:CharacterString>' + metadata.data_li_statement + '</gco:CharacterString></gmd:statement>\n';
-        } else {
-            errors.push('data_li_statement');
-        }
+        // data_li_statement
+        if (!append) $root.find(md.xpaths.dataLiStatement).remove();
+        var data_li_statement = this.checkValue_(this.obj, 'data_li_statement');
+        $li_lineage.append(this.convertObj2Xml(this.getXmlObjLiStatement(data_li_statement)));
 
+       /*
         // #TODO: LI_ProcessStep
         if (metadata.data_li_processstep) {
             xml += '<gmd:processStep><gmd:LI_ProcessStep>\n';
             xml += '<gmd:description><gco:CharacterString>' + metadata.data_li_processstep + '</gco:CharacterString></gmd:description>\n';
             xml += '</gmd:LI_ProcessStep></gmd:processStep>\n';
-        } else {
-            errors.push('data_li_processstep');
         }
-
         // #TODO: LI_Source
         if (metadata.data_li_source) {
             xml += '<gmd:source><gmd:LI_Source>\n';
             xml += '<gmd:description><gco:CharacterString>' + metadata.data_li_source + '</gco:CharacterString></gmd:description>\n';
             xml += '</gmd:LI_Source></gmd:source>\n';
-        } else {
-            errors.push('data_li_source');
-        }
-
-        xml += '</gmd:LI_Lineage></gmd:lineage>\n';
-        xml += '</gmd:DQ_DataQuality></gmd:dataQualityInfo>\n';
-
-        // Fin du fichier
-        xml += '</gmd:MD_Metadata>\n';
-        */
-
-
-        /*
-        var channel = $xml.find("gmd\\:channel, channel");
-        // console.log('aaa', this.checkValue_(this.obj, 'title'));
-        if (this.checkValue_(this.obj, 'title')) {
-            var title = channel.find("gmd\\:title, title");
-            //var test = channel.find("gmd\\:test, test");
-            //console.log(title.length, test.length);
-            if (!append) title.remove();
-            channel.append(this.getXmlTitle(this.obj.title));
         }
         */
 
@@ -659,35 +429,175 @@ jQuery(function(md, undefined) {
     };
 
     /**
-     * Set node from node parameters
-     * @private
-     * @param  {Object} node - node object to construct node XML
-     * node = {
-     * 		nameSpace: 'gmd',                  // namespace of node
-     * 		nameNode: 'fileIdentifier',        // name of node
-     * 		textNode: 'xxxx-xxxx-xxxx-xxxx',   // text of node
-     * 		attributes: {                      // list of attributes
-     * 			name1: 'value1',               // name and value of attribute
-     * 			name2: 'value2'                // name and value of attribute
-     * 		}
-     * };
+     * Convert object root to xml
+     * @param  {Object} root - root node of object to construct XML
+     * @param {Boolean} part - if true add header
+     * xmlObj = {
+     * 		root: {
+     *   		nameSpace: 'ns',        // namespace of node
+     *          nameNode: 'metadata',   // text of node
+     *             attributes: {        // list of attributes
+     *                 a_att1: 'att1',  // name and value of attribute
+     *                 a_att2: 'att2',
+     *             },
+     *             children: [{         // list of children
+     *                 nameSpace: 'ns',
+     *                 nameNode: 'child1',
+     *                 attributes: {
+     *                     att1: 'att1',
+     *                     att2: 'att2'
+     *               }]
+     *     };
      * @return {String} XML node
      */
-    md.MetadataObj.prototype.addNode_ = function addNode(node) {
-        node = node || {};
-        var str_attributes = '';
-        if (node.nameSpace) {
-            node.fullName = node.nameSpace + ':' + node.nameNode;
-            str_attributes += 'xmlns:' + node.nameSpace + '="null"';
+    md.MetadataObj.prototype.convertObj2Xml = function(root, header) {
+        header = header || false;
+        var xmlEndArray = [];
+        var list = [root];
+        var old_level = -1;
+        var xml = [];
+        if (header) {
+            xml.push('<?xml version="1.0" encoding="UTF-8"?>');
         }
-        if (node.attributes) {
-            for (var a in node.attributes) {
-                str_attributes += ' ' + a + '="' + node.attributes[a] + '"';
+        while (list.length > 0) {
+            var node = list.pop();
+            if (!node.level) node.level = 0;
+            if (node.children) {
+                // Define node level
+                for (var child in node.children) {
+                    node.children[child].level = node.level + 1;
+                }
+                // Add node to list to treat
+                list = list.concat(node.children.reverse());
             }
+            // Define node string
+            var str_attributes = '';
+            if (node.nameSpace) {
+                node.fullName = node.nameSpace + ':' + node.nameNode;
+                str_attributes += 'xmlns:' + node.nameSpace + '="null"';
+            }
+            if (node.attributes) {
+                for (var attribut in node.attributes) {
+                    if (node.attributes[attribut])
+                        str_attributes += ' ' + attribut + '="' + node.attributes[attribut] + '"';
+                }
+            }
+            var textNode = node.textNode || '';
+            var sNodeBegin = '\n' + '<' + node.fullName + ' ' + str_attributes + '>';
+            var sNodeEnd = textNode.trim() + '</' + node.fullName + '>' + '\n';
+            // Manage tree crossing
+            if (old_level < node.level) {
+                xml.push(sNodeBegin);
+            } else if (old_level == node.level) {
+                xml.push(xmlEndArray.pop());
+                xml.push(sNodeBegin);
+            } else if (old_level > node.level) {
+                for (var level = 0; level <= old_level - node.level; level++) {
+                    xml.push(xmlEndArray.pop());
+                }
+                xml.push(sNodeBegin);
+            }
+            xmlEndArray.push(sNodeEnd);
+            old_level = node.level;
         }
-        var xml = '<' + node.fullName + ' ' + str_attributes + '>' + node.textNode + '</' + node.fullName + '>';
-        return xml;
+        // Add end of tree
+        for (var xmlEnd in xmlEndArray.reverse()) {
+            xml.push(xmlEndArray[xmlEnd]);
+        }
+        return xml.join('');
     };
+
+    /**
+     * Add node to doc if not exists
+     * @param  {String} parent - parent to add node
+     * @param  {String} xpath - xpath to check if node exists
+     * @param  {String} obj - XML obj to add
+     * @return {Object} XML node point to xpath
+     */
+    md.MetadataObj.prototype.addNodeIfNotExists = function($parent, xpath, obj) {
+        var $node = $parent.find(xpath);
+        if ($node.length === 0) {
+            $parent.append(this.convertObj2Xml(obj));
+        }
+        return $parent.find(xpath);
+    };
+
+    /**
+     * Set characterstring node object
+     * @param  {String} textNode - text of node characterstring
+     * @return {Object} object of characterstring node
+     */
+    md.MetadataObj.prototype.addCharacterString = function(textNode) {
+        textNode = textNode || '';
+        return {
+            nameSpace: 'gco',
+            nameNode: 'CharacterString',
+            textNode: textNode
+        };
+    };
+
+    /**
+     * Set date node object
+     * @param  {Object} date - date object
+     * @return {Object} object of date node
+     */
+    md.MetadataObj.prototype.addDate = function(date) {
+        date = date || {};
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'date',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'CI_Date',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'date',
+                    children: [{
+                        nameSpace: 'gco',
+                        nameNode: 'Date',
+                        textNode: date.date
+                    }]
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'dateType',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'CI_DateTypeCode',
+                        attributes: {
+                            codeList: 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#CI_DateTypeCode',
+                            codeListValue: date.type
+                        },
+                        textNode: date.type
+                    }]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Convert list of XML object to XML string
+     * @return {Object} data_legal_useconstraints XML string
+     */
+    md.MetadataObj.prototype.getXmlList = function(options) {
+        var self = this;
+        var name = options.name;
+        var obj = options.obj || self.checkValue_(self.obj, name);
+        var getXmlObj = options.getXmlObj;
+        var error = 1;
+        var list = [];
+        //dataLegalUseConstraints = dataLegalUseConstraints || this.checkValue_(this.obj, 'data_legal_useconstraints');
+        if (obj.length !== 0) {
+            obj.forEach(function(o, key) {
+                error = 0;
+                list.push(self.convertObj2Xml(getXmlObj(self, o)));
+            });
+        }
+        if (error) {
+            self.errors.push(name);
+        }
+        return list.join('\n');
+    };
+
 
     /**
      * Check if property exists in object
@@ -699,7 +609,7 @@ jQuery(function(md, undefined) {
     md.MetadataObj.prototype.checkValue_ = function(object, property, defaultValue) {
         object = object || {};
         property = property || false;
-        defaultValue = defaultValue || false;
+        defaultValue = defaultValue || '';
         if (property && object.hasOwnProperty(property)) {
             return object[property];
         }
@@ -708,1759 +618,971 @@ jQuery(function(md, undefined) {
     };
 
     /**
-     * Get md_fileidentifier XML string
-     * @return {String} md_fileidentifier XML string
+     * Get current date in YYYY-MM-DD format
+     * @return {String} current date in YYYY-MM-DD format
      */
-    md.MetadataObj.prototype.getXmlMdFileIdentifier = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'md_fileidentifier', md.guid());
-        var characterString = this.addNode_({
-            nameSpace: 'gco',
-            nameNode: 'CharacterString',
-            textNode: textNode
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'fileIdentifier',
-            textNode: characterString
-        });
-    };
-
-    /**
-     * Get title XML string
-     * @return {String} title XML string
-     */
-    md.MetadataObj.prototype.getXmlTitle = function(textNode) {
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'title',
-            textNode: textNode,
-            attributes: {
-                'att1': "val1",
-                'att2': "val2"
-            }
-        });
-    };
-
-
-    /**
-     * Get md_language XML string
-     * @return {String} md_language XML string
-     */
-    md.MetadataObj.prototype.getXmlMdLanguage = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'md_language', md.config.userLanguage);
-        var languageCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'LanguageCode',
-            textNode: textNode,
-            attributes: {
-                codelist: 'http://www.loc.gov/standards/iso639-2/',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'language',
-            textNode: languageCode
-        });
-    };
-
-    /**
-     * Get md_characterset XML string
-     * @return {String} md_characterset XML string
-     */
-    md.MetadataObj.prototype.getXmlMdCharacterSet = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'md_characterset', 'utf8');
-        var characterSetCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_CharacterSetCode ',
-            textNode: textNode,
-            attributes: {
-                codelist: 'http://www.isotc211.org/2005/resources/codeList.xml#MD_CharacterSetCode',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'characterSet',
-            textNode: characterSetCode
-        });
-    };
-
-
-    /**
-     * Get md_hierarchylevel XML string
-     * @return {String} md_hierarchylevel XML string
-     */
-    md.MetadataObj.prototype.getXmlMdHierarchyLevel = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'md_hierarchylevel');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get md_contacts XML string
-     * @return {String} md_contacts XML string
-     */
-    md.MetadataObj.prototype.getXmlMdContacts = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'md_contacts');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     *  Get md_datestamp XML string
-     *  @return {String} md_datestamp XML string
-     */
-    md.MetadataObj.prototype.getXmlMdDateStamp = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'md_datestamp');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get md_standardname XML string
-     * @return {String} md_standardname XML string
-     */
-    md.MetadataObj.prototype.getXmlMdStandardName = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'md_standardname');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get md_standardversion XML string
-     * @return {String} md_standardversion XML string
-     */
-    md.MetadataObj.prototype.getXmlMdStandardVersion = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'md_standardversion');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_title XML string
-     * @return {String} data_title XML string
-     */
-    md.MetadataObj.prototype.getXmlDataTitle = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_title');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_dates XML string
-     * @return {String} data_dates XML string
-     */
-    md.MetadataObj.prototype.getXmlDataDates = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_dates');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /***
-     * Get data_identifiers XML string
-     * @return {String} data_identifiers XML string
-     */
-    md.MetadataObj.prototype.getXmlDataIdentifiers = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_identifiers');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_abstract XML string
-     * @return {String} data_abstract XML string
-     */
-    md.MetadataObj.prototype.getXmlDataAbstract = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_abstract');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_browsegraphics XML string
-     * @return {String} data_browsegraphics XML string
-     */
-    md.MetadataObj.prototype.getXmlDataBrowseGraphics = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_browsegraphics');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_maintenancefrequencycode XML string
-     * @return {String} data_maintenancefrequencycode XML string
-     */
-    md.MetadataObj.prototype.getXmlDataMaintenancefrequencyCode = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_maintenancefrequencycode');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_temporalextents XML string
-     * @return {String} data_temporalextents XML string
-     */
-    md.MetadataObj.prototype.getXmlDataTemporalExtents = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_temporalextents');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_languages XML string
-     * @return {String} data_languages XML string
-     */
-    md.MetadataObj.prototype.getXmlDataLanguages = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_languages');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_topiccategories XML string
-     * @return {String} data_topiccategories XML string
-     */
-    md.MetadataObj.prototype.getXmlDataTopicCategories = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_topiccategories');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_keywords XML string
-     * @return {String} data_keywords XML string
-     */
-    md.MetadataObj.prototype.getXmlDataKeywords = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_keywords');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-    /**
-     * Get data_inspirekeywords XML string
-     * @return {String} data_inspirekeywords XML string
-     */
-    md.MetadataObj.prototype.getXmlDataInspireKeywords = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_inspirekeywords');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_pointofcontacts XML string
-     * @return {String} data_pointofcontacts XML string
-     */
-    md.MetadataObj.prototype.getXmlDataPointOfContacts = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_pointofcontacts');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_geographicextents XML string
-     * @return {String} data_geographicextents XML string
-     */
-    md.MetadataObj.prototype.getXmlDataGeographicExtents = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_geographicextents');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_referencesystems XML string
-     * @return {String} data_referencesystems XML string
-     */
-    md.MetadataObj.prototype.getXmlDataReferenceSystems = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_referencesystems');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_presentationform XML string
-     * @return {String} data_presentationform XML string
-     */
-    md.MetadataObj.prototype.getXmlDataPresentationForm = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_presentationform');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_spatialrepresentationtype XML string
-     * @return {String} data_spatialrepresentationtype XML string
-     */
-    md.MetadataObj.prototype.getXmlDataSpatialRepresentationType = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_spatialrepresentationtype');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_scaledenominator XML string
-     * @return {String} data_scaledenominator XML string
-     */
-    md.MetadataObj.prototype.getXmlDataScaleDenominator = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_scaledenominator');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_scaledistance XML string
-     * @return {String} data_scaledistance XML string
-     */
-    md.MetadataObj.prototype.getXmlDataScaleDistance = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_scaledistance');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_dq_level XML string
-     * @return {String} data_dq_level XML string
-     */
-    md.MetadataObj.prototype.getXmlDataDqLevel = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_dq_level');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_li_statement XML string
-     * @return {String} data_li_statement XML string
-     */
-    md.MetadataObj.prototype.getXmlDataLiStatement = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_li_statement');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_characterset XML string
-     * @return {String} data_characterset XML string
-     */
-    md.MetadataObj.prototype.getXmlDataCharacterSetCode = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_characterset');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-    /**
-     * Get data_distributionformats XML string
-     * @return {String} data_distributionformats XML string
-     */
-    md.MetadataObj.prototype.getXmlDataDistributionFormat = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_distributionformats');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_uselimitations XML string
-     * @return {String} data_uselimitations XML string
-     */
-    md.MetadataObj.prototype.getXmlDataUseLimitations = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_uselimitations');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_legal_uselimitations XML string
-     * @return {String} data_legal_uselimitations XML string
-     */
-    md.MetadataObj.prototype.getXmlDataLegalUseLimitations = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_legal_uselimitations');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_legal_useconstraints XML string
-     * @return {String} data_legal_useconstraints XML string
-     */
-    md.MetadataObj.prototype.getXmlDataLegalUseConstraints = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_legal_useconstraints');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_legal_accessconstraints XML string
-     * @return {String} data_legal_accessconstraints XML string
-     */
-    md.MetadataObj.prototype.getXmlDataLegalAccessConstraints = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_legal_accessconstraints');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_legal_accessinspireconstraints XML string
-     * @return {String} data_legal_accessinspireconstraints XML string
-     */
-    md.MetadataObj.prototype.getXmlDataLegalAccessinspireConstraints = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_legal_accessinspireconstraints');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_legal_accessotherconstraints XML string
-     * @return {String} data_legal_accessotherconstraints XML string
-     */
-    md.MetadataObj.prototype.getXmlDataLegalAccessotherConstraints = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_legal_accessotherconstraints');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_security_classification XML string
-     * @return {String} data_security_classification XML string
-     */
-    md.MetadataObj.prototype.getXmlDataSecurityClassification = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_security_classification');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_security_uselimitations XML string
-     * @return {String} data_security_uselimitations XML string
-     */
-    md.MetadataObj.prototype.getXmlDataSecurityUseLimitations = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_security_uselimitations');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_linkages XML string
-     * @return {String} data_linkages XML string
-     */
-    md.MetadataObj.prototype.getXmlDataLinkages = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_linkages');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_dq_inspireconformities XML string
-     * @return {String} data_dq_inspireconformities XML string
-     */
-    md.MetadataObj.prototype.getXmlDataDqInspireConformities = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_dq_inspireconformities');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-    /**
-     * Get data_dq_conformities XML string
-     * @return {String} data_dq_conformities XML string
-     */
-    md.MetadataObj.prototype.getXmlDataDqConformities = function(textNode) {
-        textNode = textNode || this.checkValue_(this.obj, 'data_dq_conformities');
-        var scopeCode = this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'MD_ScopeCode',
-            textNode: textNode,
-            attributes: {
-                codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
-                codeListValue: textNode
-            }
-        });
-        return this.addNode_({
-            nameSpace: 'gmd',
-            nameNode: 'hierarchyLevel',
-            textNode: scopeCode
-        });
-    };
-
-
-
-
-
-
-
-
-}(window.md = window.md || {}));
-
-
-
-// Fichier XML source
-/*
-var defaultBaseXml = '<?xml version="1.0" encoding="UTF-8"?>' +
-    '<gmd:MD_Metadata xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gml="http://www.opengis.net/gml" xmlns:gmd="http://www.isotc211.org/2005/gmd" xsi:schemaLocation="http://www.isotc211.org/2005/gmd http://schemas.opengis.net/iso/19139/20060504/gmd/gmd.xsd">' +
-        '<gmd:channel>' +
-            '<gmd:title>' +
-                'RSS Title' +
-            '</gmd:title>' +
-        '</gmd:channel>' +
-    '</gmd:MD_Metadata>';
-xmlDoc = $.parseXML(defaultBaseXml);
-$xml = $(xmlDoc);
-// Infos sur le noeud à ajouter
-var attributes = {
-    'att1': "val1",
-    'att2': "val2"
-};
-// rouver l'ensemble des éléments 'title'
-$title = $xml.find("gmd\\:channel>gmd\\:title, channel>title");
-//$title.first().remove();
-// Supprimer les éléments title
-$title.remove();
-
-// Ajouter le nouvel élément title
-$channel = $xml.find("gmd\\:channel, channel");
-$channel.append(addNode('gmd', 'title', attributes, 'test 2'));
-// Afficher le résultat
-var xmlString = new XMLSerializer().serializeToString(xmlDoc);
-var regex = /( xmlns:[a-z]*="null")/igm;
-xmlString = xmlString.replace(regex, '');
-console.log(xmlString);
-*/
-
-
-
-
-function xmlContacts(contacts, contactType, errors) {
-    var xml = '';
-    var xml_begin, xml_end, email_error, organisation_error, contacts_error;
-    if (contactType == 'md') {
-        xml_begin = '<gmd:contact>\n' + '<gmd:CI_ResponsibleParty>\n';
-        xml_end = '</gmd:CI_ResponsibleParty>\n' + '</gmd:contact>\n';
-        email_error = 'md_contact_email';
-        organisation_error = 'md_contact_organisation';
-        contacts_error = 'md_contacts';
-    } else {
-        xml_begin = '<gmd:pointOfContact>\n' + '<gmd:CI_ResponsibleParty>\n';
-        xml_end = '</gmd:CI_ResponsibleParty>\n' + '</gmd:pointOfContact>\n';
-        email_error = 'data_contact_email';
-        organisation_error = 'data_contact_organisation';
-        contacts_error = 'data_contacts';
-    }
-
-    var cnt_error = 1;
-    contacts.forEach(function(contact, key) {
-        if (!contact.role) {
-            contact.role = 'pointOfContact';
-        }
-        //if (contact.organisation || contact.name || contact.position) {
-        if (contact) {
-            cnt_error = 0;
-            xml += xml_begin;
-            if (contact.name) {
-                xml += '<gmd:individualName><gco:CharacterString>' + contact.name + '</gco:CharacterString></gmd:individualName>\n';
-            }
-            if (contact.organisation) {
-                xml += '<gmd:organisationName><gco:CharacterString>' + contact.organisation + '</gco:CharacterString></gmd:organisationName>\n';
-            } else {
-                errors.push(organisation_error);
-            }
-            if (contact.position) {
-                xml += '<gmd:positionName><gco:CharacterString>' + contact.position + '</gco:CharacterString></gmd:positionName>\n';
-            }
-            xml += '<gmd:contactInfo><gmd:CI_Contact>\n';
-            if (contact.tel) {
-                xml += '<gmd:phone><gmd:CI_Telephone><gmd:voice><gco:CharacterString>' + contact.tel + '</gco:CharacterString></gmd:voice></gmd:CI_Telephone></gmd:phone>\n';
-            }
-            xml += '<gmd:address><gmd:CI_Address>\n';
-            if (contact.address) {
-                xml += '<gmd:deliveryPoint><gco:CharacterString>' + contact.address + '</gco:CharacterString></gmd:deliveryPoint>\n';
-            }
-            if (contact.city) {
-                xml += '<gmd:city><gco:CharacterString>' + contact.city + '</gco:CharacterString></gmd:city>\n';
-            }
-            if (contact.cp) {
-                xml += '<gmd:postalCode><gco:CharacterString>' + contact.cp + '</gco:CharacterString></gmd:postalCode>\n';
-            }
-            if (contact.email) {
-                xml += '<gmd:electronicMailAddress><gco:CharacterString>' + contact.email + '</gco:CharacterString></gmd:electronicMailAddress>\n';
-            } else {
-                errors.push(email_error);
-            }
-            xml += '</gmd:CI_Address></gmd:address>\n';
-
-            /* #TODO: ajouter logo
-            <gmd:contactInstructions>
-                <gmx:FileName src="https://cigalsace.org/metadata/ARAA/Logos/Logo_ARAA.jpg">logo</gmx:FileName>
-            </gmd:contactInstructions>
-            */
-
-            xml += '</gmd:CI_Contact></gmd:contactInfo>\n';
-            xml += '<gmd:role><gmd:CI_RoleCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#CI_RoleCode" codeListValue="' + contact.role + '">' + contact.role + '</gmd:CI_RoleCode></gmd:role>\n';
-            xml += xml_end;
-        }
-    });
-    if (cnt_error) {
-        errors.push(contacts_error);
-    }
-    return {
-        xml: xml,
-        errors: errors
-    };
-}
-
-function xmlDataDate(date, dateType) {
-    //console.log('date: '+date);
-    //console.log('date: '+moment(date).format('YYYY-MM-DD'));
-    //alert('date: '+moment(date).format('YYYY-MM-DD'));
-    if (date) {
-        var data_date = {
-            type: dateType,
-            date: moment(date).format('YYYY-MM-DD')
-        };
-        return data_date;
-    }
-    return '';
-
-}
-
-function xmlKeywords(keywords, errors) {
-    var xml = '';
-    var data_keywords_error = 1;
-    if (keywords) {
-        keywords.forEach(function(keyword, key) {
-            if (keyword) {
-                data_keywords_error = 0;
-                xml += '<gmd:descriptiveKeywords><gmd:MD_Keywords>\n';
-                xml += '<gmd:keyword><gco:CharacterString>' + keyword.keyword + '</gco:CharacterString></gmd:keyword>\n';
-                if (keyword.type) {
-                    xml += '<gmd:type><gmd:MD_KeywordTypeCode codeListValue="' + keyword.type + '" codeList="http://www.isotc211.org/2005/resources/codeList.xml#MD_KeywordTypeCode" />' + keyword.type + '</gmd:type>\n';
-                }
-                if (keyword.thesaurus_name) {
-                    xml += '<gmd:thesaurusName><gmd:CI_Citation>\n';
-                    xml += '<gmd:title><gco:CharacterString>' + keyword.thesaurus_name + '</gco:CharacterString></gmd:title>\n';
-                    if (keyword.thesaurus_dates) {
-                        //console.log(keyword.thesaurus_dates);
-                        keyword.thesaurus_dates.forEach(function(date, key) {
-                            xml += '<gmd:date><gmd:CI_Date>\n';
-                            xml += '<gmd:date><gco:Date>' + date.date + '</gco:Date></gmd:date>\n';
-                            xml += '<gmd:dateType><gmd:CI_DateTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#CI_DateTypeCode" codeListValue="' + date.type + '">creation</gmd:CI_DateTypeCode></gmd:dateType>\n';
-                            xml += '</gmd:CI_Date></gmd:date>\n';
-                        });
-                    }
-                    xml += '</gmd:CI_Citation></gmd:thesaurusName>\n';
-                }
-                xml += '</gmd:MD_Keywords></gmd:descriptiveKeywords>\n';
-            }
-        });
-    } else {
-        errors.push('data_inspirekeywords');
-    }
-    return {
-        xml: xml,
-        errors: errors
-    };
-}
-
-function xmlConformities(conformities, conformityType, errors) {
-    var xml = '';
-    var conformities_error;
-    if (conformityType == 'inspire') {
-        conformities_error = 'data_dq_inspireconformities';
-    } else {
-        conformities_error = 'data_dq_conformities';
-    }
-    data_dq_conformities_error = 1;
-    if (conformities) {
-        conformities.forEach(function(conformity, key) {
-            if (conformity.specification) {
-                data_dq_conformities_error = 0;
-                xml += '<gmd:report><gmd:DQ_DomainConsistency xsi:type="gmd:DQ_DomainConsistency_Type">\n';
-                xml += '<gmd:measureIdentification>\n';
-                xml += '<gmd:RS_Identifier>\n';
-                xml += '<gmd:code>\n';
-                xml += '<gco:CharacterString>Conformity_' + key + '</gco:CharacterString>\n';
-                xml += '</gmd:code>\n';
-                xml += '<gmd:codeSpace>\n';
-                xml += '<gco:CharacterString>Other Conformity</gco:CharacterString>\n';
-                xml += '</gmd:codeSpace>\n';
-                xml += '</gmd:RS_Identifier>\n';
-                xml += '</gmd:measureIdentification>\n';
-                xml += '<gmd:result><gmd:DQ_ConformanceResult>\n';
-                xml += '<gmd:specification><gmd:CI_Citation>\n';
-                xml += '<gmd:title><gco:CharacterString>' + conformity.specification + '</gco:CharacterString></gmd:title>\n';
-
-                if (conformity.dates) {
-                    conformity.dates.forEach(function(date, key) {
-                        if (date.date) {
-                            xml += '<gmd:date><gmd:CI_Date>\n';
-                            xml += '<gmd:date><gco:Date>' + date.date + '</gco:Date></gmd:date>\n';
-                            xml += '<gmd:dateType><gmd:CI_DateTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#CI_DateTypeCode" codeListValue="' + date.type + '">' + date.type + '</gmd:CI_DateTypeCode></gmd:dateType>\n';
-                            xml += '</gmd:CI_Date></gmd:date>\n';
-                        }
-                    });
-                }
-
-                xml += '</gmd:CI_Citation></gmd:specification>\n';
-
-                if (conformity.explanation) {
-                    xml += '<gmd:explanation><gco:CharacterString>' + conformity.explanation + '</gco:CharacterString></gmd:explanation>\n';
-                }
-
-                if (conformity.pass == "true") {
-                    xml += '<gmd:pass><gco:Boolean>true</gco:Boolean></gmd:pass>\n';
-                } else if (conformity.pass == "false") {
-                    xml += '<gmd:pass><gco:Boolean>false</gco:Boolean></gmd:pass>\n';
-                } else {
-                    xml += '<gmd:pass></gmd:pass>\n';
-                }
-                xml += '</gmd:DQ_ConformanceResult></gmd:result>\n';
-                xml += '</gmd:DQ_DomainConsistency></gmd:report>\n';
-            }
-        });
-    }
-    if (data_dq_conformities_error) {
-        errors.push(conformities_error);
-    }
-    return {
-        xml: xml,
-        errors: errors
-    };
-}
-
-/*
-function json2xml(metadata) {
-    var xml = '';
-    var errors = [];
-
-    xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<gmd:MD_Metadata xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gml="http://www.opengis.net/gml" xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.isotc211.org/2005/gmd http://schemas.opengis.net/iso/19139/20060504/gmd/gmd.xsd">\n';
-
-    // md_fileidentifier
-    //var md_fileidentifier = metadata.md_fileidentifier;
-    if (!metadata.md_fileidentifier) {
-        metadata.md_fileidentifier = guid();
-        errors.push('md_fileidentifier');
-    }
-    xml += '<gmd:fileIdentifier><gco:CharacterString>' + metadata.md_fileidentifier + '</gco:CharacterString></gmd:fileIdentifier>\n';
-
-    // md_Language
-    // Default value define in metametadata.json else use config.userLang
-    if (!metadata.md_language) {
-        metadata.md_language = config.userLang;
-        errors.push('md_language');
-    }
-    xml += '<gmd:language><gmd:LanguageCode codeList="http://www.loc.gov/standards/iso639-2/" codeListValue="' + metadata.md_language + '">' + metadata.md_language + '</gmd:LanguageCode></gmd:language>\n';
-
-    // md_CharacterSet
-    // Default value define in metametadata.json
-    if (metadata.md_characterset) {
-        xml += '<gmd:characterSet><gmd:MD_CharacterSetCode codeList="http://www.isotc211.org/2005/resources/codeList.xml#MD_CharacterSetCode" codeListValue="' + metadata.md_characterset + '">' + metadata.md_characterset + '</gmd:MD_CharacterSetCode></gmd:characterSet>\n';
-    } else {
-        errors.push('md_characterset');
-    }
-
-    // md_HierarchyLevel
-    if (metadata.md_hierarchylevel) {
-        xml += '<gmd:hierarchyLevel><gmd:MD_ScopeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode" codeListValue="' + metadata.md_hierarchylevel + '">' + metadata.md_hierarchylevel + '</gmd:MD_ScopeCode></gmd:hierarchyLevel>\n';
-    } else {
-        errors.push('md_hierarchylevel');
-    }
-
-    // md_contacts
-    var md_contacts = xmlContacts(metadata.md_contacts, 'md', errors);
-    xml += md_contacts.xml;
-    errors = md_contacts.errors;
-
-    // md_datestamp
-    if (!metadata.md_datestamp) {
+    md.MetadataObj.prototype.getCurrentDate = function() {
         var currentTime = new Date();
         var month = ((currentTime.getMonth() + 1) < 10 ? '0' : '') + (currentTime.getMonth() + 1);
         var day = currentTime.getDate();
         var year = currentTime.getFullYear();
-        metadata.md_datestamp = year + '-' + month + '-' + day;
-        errors.push('md_datestamp');
-    }
-    xml += '<gmd:dateStamp><gco:Date>' + metadata.md_datestamp + '</gco:Date></gmd:dateStamp>\n';
-
-    // md_standardname
-    if (metadata.md_standardname) {
-        xml += '<gmd:metadataStandardName><gco:CharacterString>' + metadata.md_standardname + '</gco:CharacterString></gmd:metadataStandardName>\n';
-    } else {
-        errors.push('md_standardname');
-    }
-
-    // md_standardversion
-    if (metadata.md_standardversion) {
-        xml += '<gmd:metadataStandardVersion><gco:CharacterString>' + metadata.md_standardversion + '</gco:CharacterString></gmd:metadataStandardVersion>\n';
-    } else {
-        errors.push('md_standardversion');
-    }
-
-    // DATA
-    // data_referencesystem
-    var data_referencesystems_error = 1;
-    if (metadata.data_referencesystems) {
-        metadata.data_referencesystems.forEach(function(referencesystem, key) {
-            if (referencesystem) {
-                data_referencesystems_error = 0;
-                xml += '<gmd:referenceSystemInfo><gmd:MD_ReferenceSystem>\n';
-                xml += '<gmd:referenceSystemIdentifier><gmd:RS_Identifier>\n';
-                xml += '<gmd:code><gco:CharacterString>' + referencesystem.code + '</gco:CharacterString></gmd:code>\n';
-                xml += '</gmd:RS_Identifier></gmd:referenceSystemIdentifier>\n';
-                xml += '</gmd:MD_ReferenceSystem></gmd:referenceSystemInfo>\n';
-            }
-        });
-    }
-    if (data_referencesystems_error) {
-        errors.push('data_referencesystems');
-    }
-
-    // IDENTIFICATION INFO
-    xml += '<gmd:identificationInfo><gmd:MD_DataIdentification>\n';
-    xml += '<gmd:citation><gmd:CI_Citation>\n';
-
-    // data_title
-    if (metadata.data_title) {
-        xml += '<gmd:title><gco:CharacterString>' + metadata.data_title + '</gco:CharacterString></gmd:title>\n';
-    } else {
-        errors.push('data_title');
-    }
-
-    // Init data_dates
-    metadata.data_dates = [];
-    // data_DateCreation / data_DateRevision / data_DatePublication
-    if (metadata.data_datecreation) {
-        var data_datecreation = xmlDataDate(metadata.data_datecreation, 'creation');
-        metadata.data_dates.push(data_datecreation);
-    }
-    if (metadata.data_daterevision) {
-        var data_daterevision = xmlDataDate(metadata.data_daterevision, 'revision');
-        metadata.data_dates.push(data_daterevision);
-    }
-    if (metadata.data_datepublication) {
-        var data_datepublication = xmlDataDate(metadata.data_datepublication, 'publication');
-        metadata.data_dates.push(data_datepublication);
-    }
-
-    var data_dates_error = 1;
-    if (metadata.data_dates) {
-        metadata.data_dates.forEach(function(date, key) {
-            if (date) {
-                data_dates_error = 0;
-                xml += '<gmd:date><gmd:CI_Date>\n';
-                xml += '<gmd:date><gco:Date>' + date.date + '</gco:Date></gmd:date>\n';
-                xml += '<gmd:dateType><gmd:CI_DateTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#CI_DateTypeCode" codeListValue="' + date.type + '">' + date.type + '</gmd:CI_DateTypeCode></gmd:dateType>\n';
-                xml += '</gmd:CI_Date></gmd:date>\n';
-            }
-        });
-    }
-    if (data_dates_error) {
-        errors.push('data_dates');
-    }
-
-    // data_Identifier
-    // Renseigner md_fileidentifier comme data_Identifier par défaut si n'existe pas + message
-    if (!metadata.data_identifiers) {
-        metadata.data_identifiers = [{
-            code: metadata.md_fileidentifier,
-            codespace: 'md_fileidentifier'
-        }];
-        errors.push('data_identifiers');
-    }
-    metadata.data_identifiers.forEach(function(identifier, key) {
-        if (identifier.code) {
-            xml += '<gmd:identifier><gmd:RS_Identifier>\n';
-            xml += '<gmd:code><gco:CharacterString>' + identifier.code + '</gco:CharacterString></gmd:code>\n';
-            xml += '<gmd:codeSpace><gco:CharacterString>' + identifier.codespace + '</gco:CharacterString></gmd:codeSpace>\n';
-            xml += '</gmd:RS_Identifier></gmd:identifier>\n';
-        }
-    });
-    xml += '</gmd:CI_Citation></gmd:citation>\n';
-
-    // data_abstract
-    if (metadata.data_abstract) {
-        xml += '<gmd:abstract><gco:CharacterString>' + metadata.data_abstract + '</gco:CharacterString></gmd:abstract>\n';
-    } else {
-        errors.push('data_abstract');
-    }
-
-    // data_PointOfContact
-    if (metadata.data_contacts) {
-        var data_contacts = xmlContacts(metadata.data_contacts, 'data', errors);
-        xml += data_contacts.xml;
-        errors = data_contacts.errors;
-    }
-    // data_maintenancefrequencycode
-    if (metadata.data_maintenancefrequencycode) {
-        xml += '<gmd:resourceMaintenance>\n';
-        xml += '<gmd:MD_MaintenanceInformation>\n';
-        xml += '<gmd:maintenanceAndUpdateFrequency>\n';
-        xml += '<gmd:MD_MaintenanceFrequencyCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_MaintenanceFrequencyCode" codeListValue="' + metadata.data_maintenancefrequencycode + '">' + metadata.data_maintenancefrequencycode + '</gmd:MD_MaintenanceFrequencyCode>\n';
-        xml += '</gmd:maintenanceAndUpdateFrequency>\n';
-        xml += '</gmd:MD_MaintenanceInformation>\n';
-        xml += '</gmd:resourceMaintenance>\n';
-    } else {
-        errors.push('data_maintenancefrequencycode');
-    }
-
-    // data_browsegraphic
-    if (metadata.data_browsegraphics) {
-        metadata.data_browsegraphics.forEach(function(browsegraphic, key) {
-            if (browsegraphic.url) {
-                if (!browsegraphic.type) {
-                    var parts = browsegraphic.url.split('.');
-                    browsegraphic.type = parts[(parts.length - 1)];
-                }
-                xml += '<gmd:graphicOverview>\n';
-                xml += '<gmd:MD_BrowseGraphic>\n';
-                xml += '<gmd:fileName>\n';
-                xml += '<gco:CharacterString>' + browsegraphic.url + '</gco:CharacterString>\n';
-                xml += '</gmd:fileName>\n';
-                xml += '<gmd:fileDescription>\n';
-                xml += '<gco:CharacterString>' + browsegraphic.description + '</gco:CharacterString>\n';
-                xml += '</gmd:fileDescription>\n';
-                xml += '<gmd:fileType>\n';
-                xml += '<gco:CharacterString>' + browsegraphic.type + '</gco:CharacterString>\n';
-                xml += '</gmd:fileType>\n';
-                xml += '</gmd:MD_BrowseGraphic>\n';
-                xml += '</gmd:graphicOverview>\n';
-            } else {
-                errors.push('data_browsegraphics');
-            }
-        });
-    }
-
-    // Keywords
-    var data_keywords_error = 1;
-
-    // data_inspirekeywords
-    var inspire_keywords = [];
-    if (metadata.data_inspirekeywords) {
-        data_keywords_error = 0;
-        metadata.data_inspirekeywords.forEach(function(inspirekeyword, key) {
-            var inspire_keyword = {
-                "keyword": inspirekeyword.keyword,
-                "type": inspirekeyword.type,
-                "thesaurus_name": "GEMET - INSPIRE themes, version 1.0",
-                "thesaurus_dates": [{
-                    "type": "publication",
-                    "date": "2008-06-01"
-                }]
-            };
-            inspire_keywords.push(inspire_keyword);
-        });
-    } else {
-        errors.push('data_inspirekeywords');
-    }
-    var data_inspirekeywords = xmlKeywords(inspire_keywords, errors);
-    xml += data_inspirekeywords.xml;
-    errors = data_inspirekeywords.errors;
-
-    // data_keywords_list
-    var data_keywords_list = [];
-    if (metadata.data_keywords_list) {
-        var keywords_list = metadata.data_keywords_list.split(',');
-        keywords_list.forEach(function(keyword, key) {
-            var data_keyword = {
-                keyword: keyword.trim(),
-                type: '',
-                thesaurus_name: '',
-                thesaurus_dates: [{
-                    type: '',
-                    date: ''
-                }]
-            };
-            data_keywords_list.push(data_keyword);
-        });
-    }
-    data_keywords_list = xmlKeywords(data_keywords_list, errors);
-    xml += data_keywords_list.xml;
-    errors = data_keywords_list.errors;
-
-    // data_keywords
-    if (metadata.data_keywords) {
-        var data_keywords = xmlKeywords(metadata.data_keywords, errors);
-        xml += data_keywords.xml;
-        errors = data_keywords.errors;
-    }
-
-    // resourceConstraints: le principe retenu ici est d'utiliser 1 <resourceConstraints> pour chaque type de contrainte: <MD_Constraints>, <MD_LegalConstraints> et <MD_SecurityConstraints>
-    // resourceConstraints > Constraints
-    // data_uselimitations
-    var data_uselimitations_error = 1;
-    if (metadata.data_uselimitations) {
-        metadata.data_uselimitations.forEach(function(uselimitation, key) {
-            if (uselimitation) {
-                data_uselimitations_error = 0;
-                xml += '<gmd:resourceConstraints><gmd:MD_Constraints>\n';
-                xml += '<gmd:useLimitation><gco:CharacterString>' + uselimitation + '</gco:CharacterString></gmd:useLimitation>\n';
-                xml += '</gmd:MD_Constraints></gmd:resourceConstraints>\n';
-            }
-        });
-    }
-    if (data_uselimitations_error) {
-        errors.push('data_uselimitations');
-    }
-
-    // ResourceConstraints > LegalConstraints
-    xml += '<gmd:resourceConstraints><gmd:MD_LegalConstraints>\n';
-
-    // data_legal_useLimitations
-    var data_legal_uselimitations_error = 1;
-    if (metadata.data_legal_uselimitations) {
-        metadata.data_legal_uselimitations.forEach(function(legal_uselimitation, key) {
-            if (legal_uselimitation) {
-                data_legal_uselimitations_error = 0;
-                xml += '<gmd:useLimitation>\n';
-                xml += '<gco:CharacterString>' + legal_uselimitation + '</gco:CharacterString>\n';
-                xml += '<gmd:useLimitation>\n';
-            }
-        });
-    }
-    if (data_legal_uselimitations_error) {
-        errors.push('data_legal_useLimitations');
-    }
-
-    // data_legal_accessconstraints
-    var data_legal_accessconstraints_error = 1;
-    if (metadata.data_legal_accessconstraints) {
-        metadata.data_legal_accessconstraints.forEach(function(legal_accessconstraint, key) {
-            if (legal_accessconstraint) {
-                data_legal_accessconstraints_error = 0;
-                xml += '<gmd:accessConstraints>\n';
-                xml += '<gmd:MD_RestrictionCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_RestrictionCode" codeListValue="' + legal_accessconstraint + '">' + legal_accessconstraint + '</gmd:MD_RestrictionCode>\n';
-                xml += '</gmd:accessConstraints>\n';
-            }
-        });
-    }
-    if (data_legal_accessconstraints_error) {
-        errors.push('data_legal_accessconstraints');
-    }
-
-    // data_legal_useconstraints
-    var data_legal_useconstraints_error = 1;
-    if (metadata.data_legal_useconstraints) {
-        metadata.data_legal_useconstraints.forEach(function(legal_useconstraint, key) {
-            if (legal_useconstraint) {
-                data_legal_useconstraints_error = 0;
-                xml += '<gmd:useConstraints>\n';
-                xml += '<gmd:MD_RestrictionCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_RestrictionCode" codeListValue="' + legal_useconstraint + '">' + legal_useconstraint + '</gmd:MD_RestrictionCode>\n';
-                xml += '</gmd:useConstraints>\n';
-            }
-        });
-    }
-    if (data_legal_useconstraints_error) {
-        errors.push('data_legal_useconstraints');
-    }
-
-    // data_legal_accessinspireconstraints
-    if (metadata.data_legal_accessinspireconstraints) {
-        metadata.data_legal_accessinspireconstraints.forEach(function(legal_accessinspireconstraint, key) {
-            metadata.data_legal_accessotherconstraints.push(legal_accessinspireconstraint);
-        });
-    }
-    // data_legal_accessotherconstraints
-    var data_legal_accessotherconstraints_error = 1;
-    if (metadata.data_legal_accessotherconstraints) {
-        metadata.data_legal_accessotherconstraints.forEach(function(legal_accessotherconstraint, key) {
-            if (legal_accessotherconstraint) {
-                data_legal_accessotherconstraints_error = 0;
-                xml += '<gmd:otherConstraints><gco:CharacterString>' + legal_accessotherconstraint + '</gco:CharacterString></gmd:otherConstraints>\n';
-            }
-        });
-    }
-    if (data_legal_accessotherconstraints_error) {
-        errors.push('data_legal_accessotherconstraints');
-    }
-
-    xml += '</gmd:MD_LegalConstraints></gmd:resourceConstraints>\n';
-
-    // ResourceConstraints > SecurityConstraints
-    // TODO: data_security_uselimitations
-
-    // data_security_classification
-    if (metadata.data_security_classification) {
-        xml += '<gmd:resourceConstraints><gmd:MD_SecurityConstraints><gmd:classification>\n';
-        xml += '<gmd:MD_ClassificationCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ClassificationCode" codeListValue="' + metadata.data_security_classification + '">' + metadata.data_security_classification + '</gmd:MD_ClassificationCode>\n';
-        xml += '</gmd:classification></gmd:MD_SecurityConstraints></gmd:resourceConstraints>\n';
-    } else {
-        errors.push('data_security_classification');
-    }
-
-    // Fin de data_ResourceConstraints
-
-    // data_SpatialRepresentationType
-    if (metadata.data_spatialrepresentationtype) {
-        xml = xml + '<gmd:spatialRepresentationType>\n';
-        xml = xml + '<gmd:MD_SpatialRepresentationTypeCode codeList="http://www.isotc211.org/2005/resources/codeList.xml#MD_SpatialRepresentationTypeCode" codeListValue="' + metadata.data_spatialrepresentationtype + '">' + metadata.data_spatialrepresentationtype + '</gmd:MD_SpatialRepresentationTypeCode>\n';
-        xml = xml + '</gmd:spatialRepresentationType>\n';
-    } else {
-        errors.push('data_spatialrepresentationtype');
-    }
-
-    // data_ScaleDenominator / data_ScaleDistance
-    if (metadata.data_scaledenominator || metadata.data_scaledistance) {
-        xml = xml + '<gmd:spatialResolution><gmd:MD_Resolution>\n';
-        if (metadata.data_scaledenominator) {
-            xml = xml + '<gmd:equivalentScale><gmd:MD_RepresentativeFraction>\n';
-            xml = xml + '<gmd:denominator><gco:Integer>' + metadata.data_scaledenominator + '</gco:Integer></gmd:denominator>\n';
-            xml = xml + '</gmd:MD_RepresentativeFraction></gmd:equivalentScale>\n';
-        }
-        if (metadata.data_scaledistance) {
-            xml = xml + '<gmd:distance><gco:Distance uom="http://standards.iso.org/ittf/PublicityAvailableStandards/ISO_19139_Schemas/resources.uom/ML_gmxUom.xml#m">' + metadata.data_scaledistance + '</gco:Distance></gmd:distance>\n';
-        }
-        xml = xml + '</gmd:MD_Resolution></gmd:spatialResolution>\n';
-    } else {
-        errors.push('data_scales');
-    }
-
-    // data_Languages
-    if (!metadata.data_languages) {
-        metadata.data_languages[0] = config.userLang;
-        errors.push('data_languages');
-    }
-    metadata.data_languages.forEach(function(language, key) {
-        if (language) {
-            data_languages_error = 0;
-            xml += '<gmd:language>\n';
-            xml += '<gmd:LanguageCode codeList="http://www.loc.gov/standards/iso639-2/" codeListValue="' + language + '">' + language + '</gmd:LanguageCode>\n';
-            xml += '</gmd:language>\n';
-        }
-    });
-
-    // data_CharacterSet
-    if (metadata.data_characterset) {
-        xml = xml + '<gmd:spatialRepresentationType>\n';
-        xml = xml + '<gmd:MD_SpatialRepresentationTypeCode codeList="http://www.isotc211.org/2005/resources/codeList.xml#MD_SpatialRepresentationTypeCode" codeListValue="' + metadata.data_characterset + '">' + metadata.data_characterset + '</gmd:MD_SpatialRepresentationTypeCode>\n';
-        xml = xml + '</gmd:spatialRepresentationType>\n';
-    } else {
-        errors.push('data_spatialrepresentationtype');
-    }
-
-    data_topiccategories_error = 1;
-    if (metadata.data_topiccategories) {
-        metadata.data_topiccategories.forEach(function(topiccategory, key) {
-            if (topiccategory) {
-                data_topiccategories_error = 0;
-                xml += '<gmd:topicCategory><gmd:MD_TopicCategoryCode>' + topiccategory + '</gmd:MD_TopicCategoryCode></gmd:topicCategory>\n';
-            }
-        });
-    } else {
-        errors.push('data_topiccategories');
-    }
-
-    // data_Extent
-    // data_geographicextents
-    data_geographicextents_error = 1;
-    if (metadata.data_geographicextents) {
-        metadata.data_geographicextents.forEach(function(geographicextent, key) {
-            if (geographicextent.xmin && geographicextent.xmax && geographicextent.ymin && geographicextent.ymax) {
-                data_geographicextents_error = 0;
-                xml += '<gmd:extent><gmd:EX_Extent>\n';
-                xml += '<gmd:description><gco:CharacterString>' + geographicextent.name + '</gco:CharacterString></gmd:description>\n';
-                xml += '<gmd:geographicElement><gmd:EX_GeographicBoundingBox>\n';
-                xml += '<gmd:westBoundLongitude><gco:Decimal>' + geographicextent.xmin + '</gco:Decimal></gmd:westBoundLongitude>\n';
-                xml += '<gmd:eastBoundLongitude><gco:Decimal>' + geographicextent.xmax + '</gco:Decimal></gmd:eastBoundLongitude>\n';
-                xml += '<gmd:southBoundLatitude><gco:Decimal>' + geographicextent.ymin + '</gco:Decimal></gmd:southBoundLatitude>\n';
-                xml += '<gmd:northBoundLatitude><gco:Decimal>' + geographicextent.ymax + '</gco:Decimal></gmd:northBoundLatitude>\n';
-                xml += '</gmd:EX_GeographicBoundingBox></gmd:geographicElement>\n';
-                xml += '</gmd:EX_Extent></gmd:extent>\n';
-            }
-        });
-    }
-    if (data_geographicextents_error) {
-        errors.push('data_geographicextents');
-    }
-
-    // data_temporalextents
-    data_temporalextents_error = 1;
-    if (metadata.data_temporalextents) {
-        metadata.data_temporalextents.forEach(function(temporalextent, key) {
-            if (temporalextent.description) {
-                data_temporalextents_error = 0;
-                xml += '<gmd:extent><gmd:EX_Extent>\n';
-                xml += '<gmd:description><gco:CharacterString>' + temporalextent.description + '</gco:CharacterString></gmd:description>\n';
-                xml += '<gmd:temporalElement><gmd:EX_TemporalExtent>\n';
-                xml += '<gmd:extent><gml:TimePeriod xsi:type="gml:TimePeriodType" gml:id="TemporalId_' + key + '">\n';
-                xml += '<gml:beginPosition>' + temporalextent.begin + '</gml:beginPosition>\n';
-                xml += '<gml:endPosition>' + temporalextent.end + '</gml:endPosition>\n';
-                xml += '</gml:TimePeriod></gmd:extent>\n';
-                xml += '</gmd:EX_TemporalExtent></gmd:temporalElement>\n';
-                xml += '</gmd:EX_Extent></gmd:extent>\n';
-            }
-        });
-    }
-    if (data_temporalextents_error) {
-        errors.push('data_temporalextents');
-    }
-
-    // data_VerticalExtent
-    // for i in range(1, 20):
-    // e, data_VerticalExtent_Min = _get_xls_value('data_verticalextent'+str(i)+'_min', lst_name, 'string')
-    // e, data_VerticalExtent_Max = _get_xls_value('data_verticalextent'+str(i)+'_max', lst_name, 'string')
-    // e, data_VerticalExtent_Unit = _get_xls_value('data_verticalextent'+str(i)+'_unit', lst_name, 'string')
-    // e, data_VerticalExtent_Ref = _get_xls_value('data_verticalextent'+str(i)+'_ref', lst_name, 'string')
-    // if data_VerticalExtent_Min and data_VerticalExtent_Max and data_VerticalExtent_Unit and data_VerticalExtent_Ref:
-    // xml += '<gmd:extent><gmd:EX_Extent>\n';
-    // xml += '<gmd:verticalElement><gmd:EX_VerticalExtent>\n';
-    // xml += '<gmd:minValue><gco:CharacterString>' + data_VerticalExtent_Min + '</gco:CharacterString></gmd:minValue>\n';
-    // xml += '<gmd:maxValue><gco:CharacterString>' + data_VerticalExtent_Max + '</gco:CharacterString></gmd:maxValue>\n';
-    // xml += '<gmd:uom><gco:CharacterString>' + data_VerticalExtent_Unit + '</gco:CharacterString></gmd:uom>\n';
-    // xml += '<gmd:verticalDatum><gco:CharacterString>' + data_VerticalExtent_Ref + '</gco:CharacterString></gmd:verticalDatum>\n';
-    // xml += '</gmd:EX_VerticalExtent></gmd:verticalElement>\n';
-    // xml += '</gmd:EX_Extent></gmd:extent>\n';
-
-    xml += '</gmd:MD_DataIdentification></gmd:identificationInfo>\n';
-
-    // DISTRIBUTION INFO
-    xml += '<gmd:distributionInfo><gmd:MD_Distribution>\n';
-
-    // data_distformats
-    data_distformats_error = 1;
-    if (metadata.data_distformats) {
-        metadata.data_distformats.forEach(function(distformat, key) {
-            if (distformat.name) {
-                data_distformats_error = 0;
-                xml += '<gmd:distributionFormat><gmd:MD_Format>\n';
-                xml += '<gmd:name><gco:CharacterString>' + distformat.name + '</gco:CharacterString></gmd:name>\n';
-                xml += '<gmd:version><gco:CharacterString>' + distformat.version + '</gco:CharacterString></gmd:version>\n';
-                xml += '<gmd:specification><gco:CharacterString>' + distformat.specification + '</gco:CharacterString></gmd:specification>\n';
-                xml += '</gmd:MD_Format></gmd:distributionFormat>\n';
-            }
-        });
-    }
-    if (data_distformats_error) {
-        errors.push('data_distformats');
-    }
-
-    xml += '<gmd:transferOptions><gmd:MD_DigitalTransferOptions>\n';
-
-    // data_linkages (url)
-    data_linkages_error = 1;
-    if (metadata.data_linkages) {
-        metadata.data_linkages.forEach(function(linkage, key) {
-            if (linkage.name) {
-                data_linkages_error = 0;
-                xml += '<gmd:onLine><gmd:CI_OnlineResource>\n';
-                xml += '<gmd:linkage><gmd:URL>' + linkage.url + '</gmd:URL></gmd:linkage>\n';
-                xml += '<gmd:protocol><gco:CharacterString>' + linkage.protocol + '</gco:CharacterString></gmd:protocol>\n';
-                xml += '<gmd:name><gco:CharacterString>' + linkage.name + '</gco:CharacterString></gmd:name>\n';
-                xml += '<gmd:description><gco:CharacterString>' + linkage.description + '</gco:CharacterString></gmd:description>\n';
-                xml += '</gmd:CI_OnlineResource></gmd:onLine>\n';
-            }
-        });
-    }
-    if (data_linkages_error) {
-        errors.push('data_linkages');
-    }
-
-    xml += '</gmd:MD_DigitalTransferOptions></gmd:transferOptions>\n';
-
-    xml += '</gmd:MD_Distribution></gmd:distributionInfo>\n';
-
-    // DATA QUALITY INFO
-    xml += '<gmd:dataQualityInfo><gmd:DQ_DataQuality>\n';
-
-    // DQ_Level
-    if (!metadata.data_dq_level) {
-        metadata.data_dq_level = metadata.md_hierarchylevel;
-        errors.push('data_dq_level'); // valeur par defaut  = hierarchylevel
-    }
-    //if (metadata.data_dq_level) {
-    xml += '<gmd:scope><gmd:DQ_Scope>\n';
-    xml += '<gmd:level><gmd:MD_ScopeCode codeListValue="' + metadata.data_dq_level + '" codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode">' + metadata.data_dq_level + '</gmd:MD_ScopeCode></gmd:level>\n';
-    xml += '</gmd:DQ_Scope></gmd:scope>\n';
-    //}
-
-    // DQ_InspireConformity
-    if (metadata.data_dq_inspireconformities) {
-        var data_inspireconformities = xmlConformities(metadata.data_dq_inspireconformities, 'inspire', errors);
-        xml += data_inspireconformities.xml;
-        errors = data_inspireconformities.errors;
-    }
-
-    // DQ_Conformity
-    if (metadata.data_dq_conformities) {
-        var data_conformities = xmlConformities(metadata.data_dq_conformities, '', errors);
-        xml += data_conformities.xml;
-        errors = data_conformities.errors;
-    }
-
-    // DQ_Lineage
-    xml += '<gmd:lineage><gmd:LI_Lineage>\n';
-
-    // LI_Statement
-    if (metadata.data_li_statement) {
-        xml += '<gmd:statement><gco:CharacterString>' + metadata.data_li_statement + '</gco:CharacterString></gmd:statement>\n';
-    } else {
-        errors.push('data_li_statement');
-    }
-
-    // LI_ProcessStep
-    if (metadata.data_li_processstep) {
-        xml += '<gmd:processStep><gmd:LI_ProcessStep>\n';
-        xml += '<gmd:description><gco:CharacterString>' + metadata.data_li_processstep + '</gco:CharacterString></gmd:description>\n';
-        xml += '</gmd:LI_ProcessStep></gmd:processStep>\n';
-    } else {
-        errors.push('data_li_processstep');
-    }
-
-    // LI_Source
-    if (metadata.data_li_source) {
-        xml += '<gmd:source><gmd:LI_Source>\n';
-        xml += '<gmd:description><gco:CharacterString>' + metadata.data_li_source + '</gco:CharacterString></gmd:description>\n';
-        xml += '</gmd:LI_Source></gmd:source>\n';
-    } else {
-        errors.push('data_li_source');
-    }
-
-    xml += '</gmd:LI_Lineage></gmd:lineage>\n';
-    xml += '</gmd:DQ_DataQuality></gmd:dataQualityInfo>\n';
-
-    // Fin du fichier
-    xml += '</gmd:MD_Metadata>\n';
-
-    return {
-        xml: xml,
-        errors: errors
+        return year + '-' + month + '-' + day;
     };
-}
-*/
+
+    /**
+     * Get md_fileidentifier XML object
+     * @return {String} md_fileidentifier XML object
+     */
+    md.MetadataObj.prototype.getXmlObjFileIdentifier = function(textNode) {
+        //textNode = textNode || this.checkValue_(this.obj, 'md_fileidentifier', md.guid());
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'fileIdentifier',
+            children: [this.addCharacterString(textNode)]
+        };
+    };
+
+    /**
+     * Get language XML object
+     * @return {Object} language XML object
+     */
+    md.MetadataObj.prototype.getXmlObjLanguage = function(self, textNode) {
+        //textNode = textNode || this.checkValue_(this.obj, 'md_language', md.config.userLanguage);
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'language',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'LanguageCode',
+                textNode: textNode,
+                attributes: {
+                    codelist: 'http://www.loc.gov/standards/iso639-2/',
+                    codeListValue: textNode
+                }
+            }]
+        };
+    };
+
+    /**
+     * Get characterset XML object
+     * @return {Object} characterset XML object
+     */
+    md.MetadataObj.prototype.getXmlObjCharacterSet = function(textNode) {
+        // textNode = textNode || this.checkValue_(this.obj, 'md_characterset', 'utf8');
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'characterSet',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_CharacterSetCode ',
+                textNode: textNode,
+                attributes: {
+                    codelist: 'http://www.isotc211.org/2005/resources/codeList.xml#MD_CharacterSetCode',
+                    codeListValue: textNode
+                }
+            }]
+        };
+    };
+
+
+    /**
+     * Get hierarchylevel XML object
+     * @return {Object} hierarchylevel XML object
+     */
+    md.MetadataObj.prototype.getXmlObjHierarchyLevel = function(textNode) {
+        //textNode = textNode || this.checkValue_(this.obj, 'md_hierarchylevel');
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'hierarchyLevel',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_ScopeCode',
+                textNode: textNode,
+                attributes: {
+                    codelist: ' http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode ',
+                    codeListValue: textNode
+                }
+            }]
+        };
+    };
+
+    /**
+     * Get md_contacts XML object
+     * @return {String} md_contacts XML object
+     */
+    md.MetadataObj.prototype.getXmlObjContacts = function(contactsType, contacts) {
+        var self = this;
+        contactsType = contactsType || 'data_pointofcontacts';
+        contacts = contacts || self.checkValue_(self.obj, contactsType, []);
+        var obj = {
+            nameSpace: 'gmd',
+            nameNode: 'pointOfContact',
+            children: []
+        };
+        var cnt_organisation = 1;
+        var cnt_email = 1;
+        var cnt_error = 1;
+        contacts.forEach(function(contact, key) {
+            contact.role = self.checkValue_(contact, 'role', 'pointOfContact');
+            if (contact) {
+                //console.log(contacts);
+                cnt_error = 0;
+                var cntName = {
+                    nameSpace: 'gmd',
+                    nameNode: 'individualName',
+                    children: [self.addCharacterString(contact.name)]
+                };
+                var cntOrganisation = {
+                    nameSpace: 'gmd',
+                    nameNode: 'organisationName',
+                    children: [self.addCharacterString(contact.organisation)]
+                };
+                var cntPosition = {
+                    nameSpace: 'gmd',
+                    nameNode: 'positionName',
+                    children: [self.addCharacterString(contact.position)]
+                };
+
+                var cntPhone = {
+                    nameSpace: 'gmd',
+                    nameNode: 'phone',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'CI_Telephone',
+                        children: [{
+                            nameSpace: 'gmd',
+                            nameNode: 'voice',
+                            children: [self.addCharacterString(contact.phone)]
+                        }]
+                    }]
+                };
+
+                var deliveryPoint = {
+                    nameSpace: 'gmd',
+                    nameNode: 'deliveryPoint',
+                    children: [self.addCharacterString(contact.address)]
+                };
+                var city = {
+                    nameSpace: 'gmd',
+                    nameNode: 'city',
+                    children: [self.addCharacterString(contact.city)]
+                };
+                var postalCode = {
+                    nameSpace: 'gmd',
+                    nameNode: 'postalCode',
+                    children: [self.addCharacterString(contact.cp)]
+                };
+                var email = {
+                    nameSpace: 'gmd',
+                    nameNode: 'electronicMailAddress',
+                    children: [self.addCharacterString(contact.email)]
+                };
+
+                var address = {
+                    nameSpace: 'gmd',
+                    nameNode: 'address',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'CI_Address',
+                        children: [deliveryPoint, city, postalCode, email]
+                    }]
+                };
+                var contactInstructions = {
+                    nameSpace: 'gmd',
+                    nameNode: 'contactInstructions',
+                    children: [{
+                        nameSpace: 'gmx',
+                        nameNode: 'FileName',
+                        textNode: contact.logo_text,
+                        attributes: {
+                            src: contact.logo_url
+                        }
+                    }]
+                };
+
+                var cntInfo = {
+                    nameSpace: 'gmd',
+                    nameNode: 'contactInfo',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'CI_Contact',
+                        children: [cntPhone, address, contactInstructions]
+                    }]
+                };
+
+                var cntRole = {
+                    nameSpace: 'gmd',
+                    nameNode: 'role',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'CI_RoleCode',
+                        textNode: contact.role,
+                        attributes: {
+                            codelist: 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#CI_RoleCode',
+                            codeListValue: contact.role
+                        }
+                    }]
+                };
+                var ciResponsibleParty = {
+                    nameSpace: 'gmd',
+                    nameNode: 'CI_ResponsibleParty',
+                    children: [cntName, cntOrganisation, cntPosition, cntInfo, cntRole]
+                };
+                if (contact.organisation) cnt_organisation = 0;
+                if (contact.email) cnt_email = 0;
+
+                obj.children.push(ciResponsibleParty);
+            }
+        });
+        // Define metadata or data contact
+        if (contactsType == 'md_contacts') {
+            obj.nameNode = 'contact';
+            // Manage errors
+            if (cnt_organisation) self.errors.push('md_contact_organisation');
+            if (cnt_email) self.errors.push('md_contact_email');
+            if (cnt_error) self.errors.push('md_contacts');
+        } else {
+            obj.nameNode = 'pointOfContact';
+            // Manage errors
+            if (cnt_organisation) self.errors.push('data_contact_organisation');
+            if (cnt_email) self.errors.push('data_contact_email');
+            if (cnt_error) self.errors.push('data_contacts');
+        }
+        return obj;
+    };
+
+    /**
+     *  Get md_datestamp XML object
+     *  @return {String} md_datestamp XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDateStamp = function(textNode) {
+        // textNode = textNode || this.checkValue_(this.obj, 'md_datestamp', md_datestamp);
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'dateStamp',
+            children: [{
+                nameSpace: 'gco',
+                nameNode: 'Date',
+                textNode: textNode
+            }]
+        };
+    };
+
+    /**
+     * Get md_standardname XML object
+     * @return {String} md_standardname XML object
+     */
+    md.MetadataObj.prototype.getXmlObjMdStandardName = function(textNode) {
+        // textNode = textNode || this.checkValue_(this.obj, 'md_standardname');
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'metadataStandardName',
+            children: [this.addCharacterString(textNode)]
+        };
+    };
+
+    /**
+     * Get md_standardversion XML object
+     * @return {String} md_standardversion XML object
+     */
+    md.MetadataObj.prototype.getXmlObjMdStandardVersion = function(textNode) {
+        // textNode = textNode || this.checkValue_(this.obj, 'md_standardversion');
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'metadataStandardVersion',
+            children: [this.addCharacterString(textNode)]
+        };
+    };
+
+    /**
+     * Get data_referencesystem XML object
+     * @return {String} data_referencesystem XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDataReferenceSystem = function(self, dataReferencesystem) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'referenceSystemInfo',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_ReferenceSystem',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'referenceSystemIdentifier',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'RS_Identifier',
+                        children: [{
+                            nameSpace: 'gmd',
+                            nameNode: 'code',
+                            children: [self.addCharacterString(dataReferencesystem.code)]
+                        }, {
+                            nameSpace: 'gmd',
+                            nameNode: 'codeSpace',
+                            children: [self.addCharacterString(dataReferencesystem.codespace)]
+                        }, {
+                            // #TODO: add to js object
+                            nameSpace: 'gmd',
+                            nameNode: 'version',
+                            children: [self.addCharacterString(dataReferencesystem.version)]
+                        }]
+                    }]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Get data_title XML object
+     * @return {String} data_title XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDataTitle = function(textNode) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'title',
+            children: [this.addCharacterString(textNode)]
+        };
+    };
+
+    /**
+     * Get data_dates XML object
+     * @return {String} data_dates XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDataDate = function(self, date) {
+        return self.addDate(date);
+    };
+
+    /***
+     * Get data_identifier XML object
+     * @return {String} data_identifier XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDataIdentifier = function(self, dataIdentifier) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'identifier',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'RS_Identifier',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'code',
+                    children: [self.addCharacterString(dataIdentifier.code)]
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'codeSpace',
+                    children: [self.addCharacterString(dataIdentifier.codespace)]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Get data_abstract XML object
+     * @return {Object} data_abstract XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDataAbstract = function(textNode) {
+        // textNode = textNode || this.checkValue_(this.obj, 'data_abstract');
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'abstract',
+            children: [this.addCharacterString(textNode)]
+        };
+    };
+
+    /**
+     * Get data_maintenancefrequencycode XML object
+     * @return {Object} data_maintenancefrequencycode XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDataMaintenancefrequencyCode = function(textNode) {
+        // textNode = textNode || this.checkValue_(this.obj, 'data_maintenancefrequencycode');
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'resourceMaintenance',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_MaintenanceInformation',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'maintenanceAndUpdateFrequency',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'MD_MaintenanceFrequencyCode',
+                        attributes: {
+                            codeList: 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_MaintenanceFrequencyCode',
+                            codeListValue: textNode
+                        },
+                        textNode: textNode
+                    }]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Get data_browsegraphic XML object
+     * @return {Object} data_browsegraphic XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDataBrowseGraphic = function(self, dataBrowseGraphic) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'graphicOverview',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_BrowseGraphic',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'fileName',
+                    children: [self.addCharacterString(dataBrowseGraphic.url)]
+
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'fileDescription',
+                    children: [self.addCharacterString(dataBrowseGraphic.description)]
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'fileType',
+                    children: [self.addCharacterString(dataBrowseGraphic.type)]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Get data_keywords XML object
+     * @param {Object} dataKeywords
+     * @return {Object} data_keywords XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDataKeyword = function(self, dataKeyword) {
+        var keyword = {
+            nameSpace: 'gmd',
+            nameNode: 'descriptiveKeywords',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_Keywords',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'keyword',
+                    children: [self.addCharacterString(dataKeyword.keyword)]
+                }]
+            }]
+        };
+        if (dataKeyword.type) {
+            var keywordType = {
+                nameSpace: 'gmd',
+                nameNode: 'type',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'MD_KeywordTypeCode',
+                    attributes: {
+                        codeList: 'http://www.isotc211.org/2005/resources/codeList.xml#MD_KeywordTypeCode',
+                        codeListValue: dataKeyword.type
+                    },
+                    textNode: dataKeyword.type
+                }]
+            };
+            keyword.children[0].children.push(keywordType);
+        }
+        if (dataKeyword.thesaurus_name) {
+            var keywordTheasaurus = {
+                nameSpace: 'gmd',
+                nameNode: 'thesaurusName',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'CI_Citation',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'title',
+                        children: [self.addCharacterString(dataKeyword.thesaurus_name)]
+                    }]
+                }]
+            };
+            if (dataKeyword.thesaurus_dates) {
+                dataKeyword.thesaurus_dates.forEach(function(date, key) {
+                    keywordTheasaurus.children[0].children.push(self.addDate(date));
+                });
+            }
+            keyword.children[0].children.push(keywordTheasaurus);
+        }
+        return keyword;
+    };
+
+    /**
+     * Get data_uselimitation object
+     * @return {Object} data_legal_uselimitation XML object
+     */
+    md.MetadataObj.prototype.getXmlObjUseLimitation = function(self, dataLegalUseLimitation) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'useLimitation',
+            children: [self.addCharacterString(dataLegalUseLimitation)]
+        };
+    };
+
+    /**
+     * Get data_legal_useconstraint XML object
+     * @return {Object} data_legal_useconstraint XML object
+     */
+    md.MetadataObj.prototype.getXmlObjUseConstraint = function(self, useConstraint) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'useConstraints',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_RestrictionCode',
+                attributes: {
+                    codeList: 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_RestrictionCode',
+                    codeListValue: useConstraint
+                },
+                textNode: useConstraint
+            }]
+        };
+    };
+
+
+    /**
+     * Get data_legal_accessconstraint XML object
+     * @return {Object} data_legal_accessconstraint XML object
+     */
+    md.MetadataObj.prototype.getXmlObjAccessConstraint = function(self, accessConstraint) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'accessConstraints',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_RestrictionCode',
+                attributes: {
+                    codeList: 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_RestrictionCode',
+                    codeListValue: accessConstraint
+                },
+                textNode: accessConstraint
+            }]
+        };
+    };
+
+    /**
+     * Get data_legal_accessinspireconstraints XML object
+     * @return {Object} data_legal_accessinspireconstraints XML object
+     */
+    md.MetadataObj.prototype.getXmlObjOtherConstraint = function(self, otherconstraint) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'otherConstraints',
+            children: [self.addCharacterString(otherconstraint)]
+        };
+    };
+
+    /**
+     * Get data_legal_accessotherconstraints XML object
+     * @return {Object} data_legal_accessotherconstraints XML object
+     */
+    md.MetadataObj.prototype.getXmlObjClassification = function(textNode) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'classification',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_ClassificationCode',
+                attributes: {
+                    codeList: 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ClassificationCode',
+                    codeListValue: textNode
+                },
+                textNode: textNode
+            }]
+        };
+    };
+
+
+    /**
+     * Get data_spatialrepresentationtype XML object
+     * @return {Object} data_spatialrepresentationtype XML object
+     */
+    md.MetadataObj.prototype.getXmlObjSpatialRepresentationType = function(textNode) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'spatialRepresentationType',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_SpatialRepresentationTypeCode',
+                attributes: {
+                    codeList: 'http://www.isotc211.org/2005/resources/codeList.xml#MD_SpatialRepresentationTypeCode',
+                    codeListValue: textNode
+                },
+                textNode: textNode
+            }]
+        };
+    };
+
+    /**
+     * Get data_scaledenominator XML object
+     * @return {Object} data_scaledenominator XML object
+     */
+    md.MetadataObj.prototype.getXmlObjScaleDenominator = function(textNode) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'equivalentScale',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_RepresentativeFraction',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'denominator',
+                    children: [{
+                        nameSpace: 'gco',
+                        nameNode: 'Integer',
+                        textNode: textNode
+                    }]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Get data_scaledistance XML object
+     * @return {Object} data_scaledistance XML object
+     */
+    md.MetadataObj.prototype.getXmlObjScaleDistance = function(textNode) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'distance',
+            children: [{
+                nameSpace: 'gco',
+                nameNode: 'Distance',
+                attributes: {
+                    uom: 'http://standards.iso.org/ittf/PublicityAvailableStandards/ISO_19139_Schemas/resources.uom/ML_gmxUom.xml#m'
+                },
+                textNode: textNode
+            }]
+        };
+    };
+
+    /**
+     * Get data_topiccategory XML object
+     * @return {Object} data_topiccategory XML object
+     */
+    md.MetadataObj.prototype.getXmlObjTopicCategory = function(self, textNode) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'topicCategory',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_TopicCategoryCode',
+                textNode: textNode
+            }]
+        };
+    };
+
+    /**
+     * Get data_geographicextent XML object
+     * @return {String} data_geographicextent XML object
+     */
+    md.MetadataObj.prototype.getXmlObjGeographicExtent = function(self, extent) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'extent',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'EX_Extent',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'description',
+                    children: [self.addCharacterString(extent.name)]
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'geographicElement',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'EX_GeographicBoundingBox',
+                        children: [{
+                            nameSpace: 'gmd',
+                            nameNode: 'westBoundLongitude',
+                            children: [{
+                                nameSpace: 'gco',
+                                nameNode: 'Decimal',
+                                textNode: extent.xmin
+                            }]
+                        }, {
+                            nameSpace: 'gmd',
+                            nameNode: 'eastBoundLongitude',
+                            children: [{
+                                nameSpace: 'gco',
+                                nameNode: 'Decimal',
+                                textNode: extent.xmax
+                            }]
+                        }, {
+                            nameSpace: 'gmd',
+                            nameNode: 'southBoundLatitude',
+                            children: [{
+                                nameSpace: 'gco',
+                                nameNode: 'Decimal',
+                                textNode: extent.ymin
+                            }]
+                        }, {
+                            nameSpace: 'gmd',
+                            nameNode: 'northBoundLatitude',
+                            children: [{
+                                nameSpace: 'gco',
+                                nameNode: 'Decimal',
+                                textNode: extent.ymax
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Get data_temporalextent XML object
+     * @return {String} data_temporalextent XML object
+     */
+    md.MetadataObj.prototype.getXmlObjTemporalExtent = function(self, extent) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'extent',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'EX_Extent',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'description',
+                    children: [self.addCharacterString(extent.name)]
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'temporalElement',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'EX_TemporalExtent',
+                        children: [{
+                            nameSpace: 'gmd',
+                            nameNode: 'extent',
+                            children: [{
+                                nameSpace: 'gml',
+                                nameNode: 'TimePeriod',
+                                attributes: {
+                                    "xsi:type": "gml:TimePeriodType",
+                                    "gml:id": md.guid()
+                                },
+                                children: [{
+                                    nameSpace: 'gml',
+                                    nameNode: 'beginPosition',
+                                    textNode: extent.begin
+                                }, {
+                                    nameSpace: 'gml',
+                                    nameNode: 'endPosition',
+                                    textNode: extent.end
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Get data_verticalextent XML object
+     * @return {String} data_verticalextent XML object
+     */
+    md.MetadataObj.prototype.getXmlObjVerticalExtent = function(self, extent) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'extent',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'EX_Extent',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'description',
+                    children: [self.addCharacterString(extent.name)]
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'verticalElement',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'EX_VerticalExtent',
+                        children: [{
+                            nameSpace: 'gmd',
+                            nameNode: 'minValue',
+                            children: [self.addCharacterString(extent.minvalue)]
+                        }, {
+                            nameSpace: 'gmd',
+                            nameNode: 'maxValue',
+                            children: [self.addCharacterString(extent.maxvalue)]
+                        }, {
+                            nameSpace: 'gmd',
+                            nameNode: 'uom',
+                            children: [self.addCharacterString(extent.unit)]
+                        }, {
+                            nameSpace: 'gmd',
+                            nameNode: 'verticalDatum',
+                            children: [self.addCharacterString(extent.datum)]
+                        }]
+                    }]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Get data_distributionformat XML object
+     * @return {String} data_distributionformat XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDistributionFormat = function(self, distributionformat) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'distributionFormat',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'MD_Format',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'name',
+                    children: [self.addCharacterString(distributionformat.name)]
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'version',
+                    children: [self.addCharacterString(distributionformat.version)]
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'specification',
+                    children: [self.addCharacterString(distributionformat.specification)]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Get data_linkages XML object
+     * @return {String} data_linkages XML object
+     */
+    md.MetadataObj.prototype.getXmlObjLinkage = function(self, linkage) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'onLine',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'CI_OnlineResource',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'linkage',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'URL',
+                        textNode: linkage.url
+                    }]
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'protocol',
+                    children: [self.addCharacterString(linkage.protocol)]
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'name',
+                    children: [self.addCharacterString(linkage.name)]
+                }, {
+                    nameSpace: 'gmd',
+                    nameNode: 'description',
+                    children: [self.addCharacterString(linkage.description)]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Get data_dq_level XML object
+     * @return {String} data_dq_level XML object
+     */
+    md.MetadataObj.prototype.getXmlObjScopeLevel = function(textNode) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'scope',
+            children: [{
+                nameSpace: 'gmd',
+                nameNode: 'DQ_Scope',
+                children: [{
+                    nameSpace: 'gmd',
+                    nameNode: 'level',
+                    children: [{
+                        nameSpace: 'gmd',
+                        nameNode: 'MD_ScopeCode',
+                        attributes: {
+                            codeList: 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#MD_ScopeCode',
+                            codeListValue: textNode
+                        },
+                        textNode: textNode
+                    }]
+                }]
+            }]
+        };
+    };
+
+    /**
+     * Get data_li_statement XML object
+     * @return {String} data_li_statement XML object
+     */
+    md.MetadataObj.prototype.getXmlObjLiStatement = function(textNode) {
+        return {
+            nameSpace: 'gmd',
+            nameNode: 'statement',
+            children: [ this.addCharacterString(textNode) ]
+        };
+    };
+
+    /**
+     * Get data_dq_conformities XML object
+     * @return {String} data_dq_conformities XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDqConformities = function(textNode) {
+        return {};
+        /*
+        if (conformity.specification) {
+            data_dq_conformities_error = 0;
+            xml += '<gmd:report><gmd:DQ_DomainConsistency xsi:type="gmd:DQ_DomainConsistency_Type">\n';
+            xml += '<gmd:measureIdentification>\n';
+            xml += '<gmd:RS_Identifier>\n';
+            xml += '<gmd:code>\n';
+            xml += '<gco:CharacterString>Conformity_' + key + '</gco:CharacterString>\n';
+            xml += '</gmd:code>\n';
+            xml += '<gmd:codeSpace>\n';
+            xml += '<gco:CharacterString>Other Conformity</gco:CharacterString>\n';
+            xml += '</gmd:codeSpace>\n';
+            xml += '</gmd:RS_Identifier>\n';
+            xml += '</gmd:measureIdentification>\n';
+            xml += '<gmd:result><gmd:DQ_ConformanceResult>\n';
+            xml += '<gmd:specification><gmd:CI_Citation>\n';
+            xml += '<gmd:title><gco:CharacterString>' + conformity.specification + '</gco:CharacterString></gmd:title>\n';
+            if (conformity.dates) {
+                conformity.dates.forEach(function(date, key) {
+                    if (date.date) {
+                        xml += '<gmd:date><gmd:CI_Date>\n';
+                        xml += '<gmd:date><gco:Date>' + date.date + '</gco:Date></gmd:date>\n';
+                        xml += '<gmd:dateType><gmd:CI_DateTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/ML_gmxCodelists.xml#CI_DateTypeCode" codeListValue="' + date.type + '">' + date.type + '</gmd:CI_DateTypeCode></gmd:dateType>\n';
+                        xml += '</gmd:CI_Date></gmd:date>\n';
+                    }
+                });
+            }
+            xml += '</gmd:CI_Citation></gmd:specification>\n';
+            if (conformity.explanation) {
+                xml += '<gmd:explanation><gco:CharacterString>' + conformity.explanation + '</gco:CharacterString></gmd:explanation>\n';
+            }
+            if (conformity.pass == "true") {
+                xml += '<gmd:pass><gco:Boolean>true</gco:Boolean></gmd:pass>\n';
+            } else if (conformity.pass == "false") {
+                xml += '<gmd:pass><gco:Boolean>false</gco:Boolean></gmd:pass>\n';
+            } else {
+                xml += '<gmd:pass></gmd:pass>\n';
+            }
+            xml += '</gmd:DQ_ConformanceResult></gmd:result>\n';
+            xml += '</gmd:DQ_DomainConsistency></gmd:report>\n';
+        }
+         */
+
+    };
+
+    /**
+     * Get data_presentationform XML object
+     * @return {String} data_presentationform XML object
+     */
+    md.MetadataObj.prototype.getXmlObjDataPresentationForm = function(textNode) {
+        return {};
+    };
+
+}(window.md = window.md || {}));

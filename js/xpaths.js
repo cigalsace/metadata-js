@@ -18,6 +18,12 @@ md.xpaths = {
     mdStandardName: 'gmd\\:metadataStandardName>gco\\:CharacterString, metadataStandardName>CharacterString',
     mdStandardVersion: 'gmd\\:metadataStandardVersion>gco\\:CharacterString, metadataStandardVersion>CharacterString',
     // Data
+    dataMdIdentification: 'gmd\\:identificationInfo>gmd\\:MD_DataIdentification, identificationInfo>MD_DataIdentification',
+    dataDistribution: 'gmd\\:distributionInfo>gmd\\:MD_Distribution, distributionInfo>MD_Distribution',
+    dataCiCitation: 'gmd\\:citation>gmd\\:CI_Citation, citation>CI_Citation',
+    dataMdLegalConstraints: 'gmd\\:resourceConstraints>gmd\\:MD_LegalConstraints, resourceConstraints>MD_LegalConstraints',
+    dataMdSecurityConstraints: 'gmd\\:resourceConstraints>gmd\\:MD_SecurityConstraints, resourceConstraints>MD_SecurityConstraints',
+    dataMdResolution: 'gmd\\:spatialResolution>gmd\\:MD_Resolution, spatialResolution>MD_Resolution',
     dataTitle: 'gmd\\:identificationInfo>gmd\\:MD_DataIdentification>gmd\\:citation>gmd\\:CI_Citation>gmd\\:title>gco\\:CharacterString, identificationInfo>MD_DataIdentification>citation>CI_Citation>title>CharacterString',
     serviceTitle: 'gmd\\:identificationInfo>srv\\:SV_ServiceIdentification>gmd\\:citation>gmd\\:CI_Citation>gmd\\:title>gco\\:CharacterString, identificationInfo>SV_ServiceIdentification>citation>CI_Citation>title>CharacterString',
     dataReferenceSystems: 'gmd\\:referenceSystemInfo>gmd\\:MD_ReferenceSystem, referenceSystemInfo>MD_ReferenceSystem',
@@ -100,24 +106,27 @@ md.xpaths = {
     serviceTopicCategories: 'gmd\\:identificationInfo>srv\\:SV_ServiceIdentification>gmd\\:topicCategory, identificationInfo>SV_ServiceIdentification>topicCategory',
     dataTopicCategory: 'gmd\\:MD_TopicCategoryCode, MD_TopicCategoryCode',
     // Extents
-    dataExtents: 'gmd\\:identificationInfo>gmd\\:MD_DataIdentification>gmd\\:extent>gmd\\:EX_Extent, identificationInfo>MD_DataIdentification>extent EX_Extent',
-    serviceExtents: 'gmd\\:identificationInfo>srv\\:SV_ServiceIdentification>gmd\\:extent>gmd\\:EX_Extent, identificationInfo>SV_ServiceIdentification>extent EX_Extent',
+    dataExtents: 'gmd\\:identificationInfo>gmd\\:MD_DataIdentification>gmd\\:extent>gmd\\:EX_Extent, identificationInfo>MD_DataIdentification>extent>EX_Extent',
+    serviceExtents: 'gmd\\:identificationInfo>srv\\:SV_ServiceIdentification>gmd\\:extent>gmd\\:EX_Extent, identificationInfo>SV_ServiceIdentification>extent>EX_Extent',
     dataExtentName: 'gmd\\:description>gco\\:CharacterString, description>CharacterString',
     // GeographicExtents
+    dataGeographicExtent: '',
     dataExtentNorthbound: 'gmd\\:geographicElement>gmd\\:EX_GeographicBoundingBox>gmd\\:northBoundLatitude>gco\\:Decimal, geographicElement EX_GeographicBoundingBox northBoundLatitude Decimal',
     dataExtentSouthbound: 'gmd\\:geographicElement>gmd\\:EX_GeographicBoundingBox>gmd\\:southBoundLatitude>gco\\:Decimal, geographicElement EX_GeographicBoundingBox southBoundLatitude Decimal',
     dataExtentEastbound: 'gmd\\:geographicElement>gmd\\:EX_GeographicBoundingBox>gmd\\:eastBoundLongitude>gco\\:Decimal, geographicElement EX_GeographicBoundingBox eastBoundLongitude Decimal',
     dataExtentWestbound: 'gmd\\:geographicElement>gmd\\:EX_GeographicBoundingBox>gmd\\:westBoundLongitude>gco\\:Decimal, geographicElement EX_GeographicBoundingBox westBoundLongitude Decimal',
     // TemporalExtents
+    dataTemporalExtent: '',
     dataTemporalExtent_Begin: 'gmd\\:temporalElement>gmd\\:EX_TemporalExtent>gmd\\:extent>gml\\:TimePeriod>gml\\:beginPosition, temporalElement EX_TemporalExtent extent TimePeriod beginPosition',
     dataTemporalExtent_End: 'gmd\\:temporalElement>gmd\\:EX_TemporalExtent>gmd\\:extent>gml\\:TimePeriod>gml\\:endPosition, temporalElement EX_TemporalExtent extent TimePeriod endPosition',
     // VerticalExtents
-    //'Data_VerticalExtents': '',
-    //'Data_VerticalExtent_Max': '',
-    //'Data_VerticalExtent_Unit': '',
-    //'Data_VerticalExtent_Ref': '',
+    dataVerticalExtents: '',
+    dataVerticalExtent_Max: '',
+    dataVerticalExtent_Unit: '',
+    dataVerticalExtent_Ref: '',
     // DistInfo
-    //'Data_DistInfo: 'gmd\\:distributionInfo>gmd\\:MD_Distribution, distributionInfo MD_Distribution',
+    dataMdDistribution: 'gmd\\:distributionInfo>gmd\\:MD_Distribution, distributionInfo MD_Distribution',
+    dataDigitalTransfertOptions: 'gmd\\:transferOptions>gmd\\:MD_DigitalTransferOptions, transferOptions>MD_DigitalTransferOptions',
     // DistributionFormats
     dataDistributionFormats: 'gmd\\:distributionInfo>gmd\\:MD_Distribution>gmd\\:distributionFormat>gmd\\:MD_Format, distributionInfo>MD_Distribution>distributionFormat>MD_Format',
     dataDistributionFormatName: 'gmd\\:name>gco\\:CharacterString, name>CharacterString',
@@ -131,6 +140,7 @@ md.xpaths = {
     dataLinkageProtocol: 'gmd\\:protocol>gco\\:CharacterString, protocol>CharacterString',
     dataMaintenanceFrequency: 'gmd\\:identificationInfo>gmd\\:MD_DataIdentification>gmd\\:resourceMaintenance>gmd\\:MD_MaintenanceInformation>gmd\\:maintenanceAndUpdateFrequency>gmd\\:MD_MaintenanceFrequencyCode, identificationInfo>MD_DataIdentification>resourceMaintenance>MD_MaintenanceInformation>maintenanceAndUpdateFrequency>MD_MaintenanceFrequencyCode',
     serviceMaintenanceFrequency: 'gmd\\:identificationInfo>srv\\:SV_ServiceIdentification>gmd\\:resourceMaintenance>gmd\\:MD_MaintenanceInformation>gmd\\:maintenanceAndUpdateFrequency>gmd\\:MD_MaintenanceFrequencyCode, identificationInfo>SV_ServiceIdentification>resourceMaintenance>MD_MaintenanceInformation>maintenanceAndUpdateFrequency>MD_MaintenanceFrequencyCode',
+    dataDqDataQuality: 'gmd\\:dataQualityInfo>gmd\\:DQ_DataQuality, dataQualityInfo>DQ_DataQuality',
     dataDqLevel: 'gmd\\:dataQualityInfo>gmd\\:DQ_DataQuality>gmd\\:scope>gmd\\:DQ_Scope>gmd\\:level>gmd\\:MD_ScopeCode, dataQualityInfo>DQ_DataQualityscope>DQ_Scope>level>MD_ScopeCode',
     // Conformities
     dataDqConformities: 'gmd\\:dataQualityInfo>gmd\\:DQ_DataQuality>gmd\\:report, dataQualityInfo>DQ_DataQuality>report',
@@ -140,6 +150,7 @@ md.xpaths = {
     //'Data_DQ_ConformityDateType: 'gmd\\:dateType>gmd\\:CI_DateTypeCode, dateType CI_DateTypeCode',
     dataDqConformityResult: 'gmd\\:DQ_DomainConsistency>gmd\\:result>gmd\\:DQ_ConformanceResult>gmd\\:explanation>gco\\:CharacterString, DQ_DomainConsistency>result>DQ_ConformanceResult>explanation>CharacterString',
     dataDqConformityPass: 'gmd\\:DQ_DomainConsistency>gmd\\:result>gmd\\:DQ_ConformanceResult>gmd\\:pass>gco\\:Boolean, DQ_DomainConsistency>result>DQ_ConformanceResult>pass>Boolean',
+    dataLiLineage: 'gmd\\:lineage>gmd\\:LI_Lineage, lineage>LI_Lineage',
     dataLiStatement: 'gmd\\:lineage>gmd\\:LI_Lineage>gmd\\:statement>gco\\:CharacterString, lineage>LI_Lineage>statement>CharacterString',
     //'Data_LI_ProcessStep': '',
     //'Data_LI_Source': '',

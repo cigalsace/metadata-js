@@ -16,4 +16,50 @@ jQuery(function(md, undefined) {
         });
     };
 
+    /**
+     * Left padding a string with char to length
+     * @lends md
+     * @param {String} string - original string
+     * @param {String} char - char to pad
+     * @param {Integer} length - total length of final string
+     * @return {string} UUID
+     */
+    md.lpad = function(string, char, length) {
+        while (string.length < length) {
+            string = char + string;
+        }
+        return string;
+    };
+
+    /**
+     * Right padding a string with char to length
+     * @lends md
+     * @param {String} string - original string
+     * @param {String} char - char to pad
+     * @param {Integer} length - total length of final string
+     * @return {string} UUID
+     */
+    md.rpad = function(string, char, length) {
+        while (string.length < length) {
+            string = string + char;
+        }
+        return string;
+    };
+
+    /**
+     * Padding char to length
+     * @lends md
+     * @param {String} char - char to pad
+     * @param {Integer} length - total length of final string
+     * @return {string} UUID
+     */
+    md.pad = function(char, length) {
+        var string = '';
+        for (var i=0; i < length; i++) {
+            string += char;
+        }
+        return string;
+    };
+
+
 }(window.md = window.md || {}));

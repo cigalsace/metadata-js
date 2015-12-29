@@ -431,8 +431,9 @@ jQuery(function(md, undefined) {
                 type: jQuery(this).find(md.xpaths.dataKeywordType).attr('codeListValue'),
                 thesaurus_name: jQuery(this).find(md.xpaths.dataThesaurusName).text(),
                 //thesaurus_dates: getIsoDates(jQuery(this), 'Data_ThesaurusDates'),
-                thesaurus_dates: Metadata.getDates('dataThesaurusDates').dates
+                thesaurus_dates: Metadata.getDates(this, 'dataThesaurusDates').dates
             };
+            //console.log('test ', kw.thesaurus_dates, kw.keyword);
             if (kw.thesaurus_name.toLowerCase().indexOf('gemet') > -1 && kw.thesaurus_name.toLowerCase().indexOf('inspire') > -1) {
                 data.inspire.push(kw);
             } else {
@@ -627,7 +628,7 @@ jQuery(function(md, undefined) {
                 //Data_LinkageName: jQuery(this).find(md.xpaths.dataLinkageName).text(),
                 specification: jQuery(this).find(md.xpaths.dataDqConformityTest).text(),
                 // dates: getIsoDates(jQuery(this), 'Data_DqConformityDates'),
-                dates: Metadata.getDates('Data_DqConformityDates').dates,
+                dates: Metadata.getDates(this, 'Data_DqConformityDates').dates,
                 explaination: jQuery(this).find(md.xpaths.dataDqConformityResult).text(),
                 pass: jQuery(this).find(md.xpaths.dataDqConformityPass).text()
             };
@@ -640,14 +641,16 @@ jQuery(function(md, undefined) {
      * Get the dates of resource
      * @return {Object} dates of resource
      */
-    md.MetadataXml.prototype.getDates = function(xpath_date) {
+    md.MetadataXml.prototype.getDates = function(xml, xpath_date) {
         var data = {
             dates: []
         };
+        // Get xml to parse
+        xml = xml || this.xml;
         // Check type of resource: data or service and adapt xpath
-        var xpath = xpath_date || this.getHierarchyLevelXpath('dataDates', 'serviceDates');
+        xpath_date = md.xpaths[xpath_date] || this.getHierarchyLevelXpath('dataDates', 'serviceDates');
         // Get and parse nodes from xpath
-        jQuery(this.xml).find(xpath).each(function() {
+        jQuery(xml).find(xpath_date).each(function() {
             var date = jQuery(this).find(md.xpaths.date).text();
             var dateType = jQuery(this).find(md.xpaths.dateType).text();
             if (dateType == 'creation') {

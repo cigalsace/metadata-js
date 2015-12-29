@@ -125,7 +125,7 @@ STRASBOURG CEDEX</gco:CharacterString>
 				</gmd:CI_Citation>
 			</gmd:citation>
 			<gmd:abstract>
-				<gco:CharacterString>Les données concernent les sols, produits de l'altération, du remaniement et de l'organisation des couches supérieures de la croûte terrestre sous l'action de la vie, de l'atmosphère et des échanges d'énergie qui s'y manifestent (Aubert et Boulaine). L'épaisseur du milieu décrit dépasse rarement 2m. 
+				<gco:CharacterString>Les données concernent les sols, produits de l'altération, du remaniement et de l'organisation des couches supérieures de la croûte terrestre sous l'action de la vie, de l'atmosphère et des échanges d'énergie qui s'y manifestent (Aubert et Boulaine). L'épaisseur du milieu décrit dépasse rarement 2m.
 Ces données peuvent être utiles à toute étude nécessitant des informations spatialisées sur les sols (production de biomasse agricole ou forestière, gestion qualitatitive et quantitative des eaux, biodiversité, stockage du carbone, risque érosion, aménagement du territoire, analyse paysagère, archéologie, etc...)
 Plusieurs informations représentées par unités cartographiques de sols sont disponibles avec une valeur dominante et une valeur secondaire proposée par unité cartographique, (le sol pouvant présenter une variabilité spatiale importante). Liste des paramètres représentés : matériau parental, pierrosité en surface, texture en surface, profondeur de sols, caractéristique de circulation de l'eau dans le sol...Cette liste pourra s'enrichir progressivement.
 Ces données en libre accès proviennent par extraction et traitement de la base de données sur les sols d'Alsace au 1/100 000 ème plus complète et détaillée gérée par l'Association pour la Relance Agronomique en Alsace (ARAA). Cette base de données est par ailleurs accessible selon diverses modalités (voir ressources associées et fiche métadonnées DONNEES - Base de données régionale des sols d'Alsace - Base au 1/100 000ème - version 2015).</gco:CharacterString>
@@ -263,13 +263,13 @@ STRASBOURG CEDEX</gco:CharacterString>
 					<gmd:fileName>
 						<gco:CharacterString>https://cigalsace.org/metadata/ARAA/FR-341142131-ARAA_BDSol-Alsace_100000/FR-341142131-ARAA_BDSol-Alsace_100000.jpg</gco:CharacterString>
 					</gmd:fileName>
+                    <gmd:fileDescription>
+                        <gco:CharacterString>BDD Sols Alsace 1/100 000ème</gco:CharacterString>
+                    </gmd:fileDescription>
+                    <gmd:fileType>
+                        <gco:CharacterString>.jpg</gco:CharacterString>
+                    </gmd:fileType>
 				</gmd:MD_BrowseGraphic>
-				<gmd:fileDescription>
-					<gco:CharacterString>BDD Sols Alsace 1/100 000ème</gco:CharacterString>
-				</gmd:fileDescription>
-				<gmd:fileType>
-					<gco:CharacterString>.jpg</gco:CharacterString>
-				</gmd:fileType>
 			</gmd:graphicOverview>
 			<gmd:descriptiveKeywords>
 				<gmd:MD_Keywords>
@@ -687,7 +687,7 @@ STRASBOURG CEDEX</gco:CharacterString>
 				<gmd:LI_Lineage>
 					<gmd:statement>
 						<gco:CharacterString>Données sources et processus de production :
-(1) Données extraites de la base de données sur les sols d’Alsace -Base  au 1/100 000ème - version 2015. La constitution de cette base de données a été faite conformément au cahier des charges du programme national Inventaire Gestion et Conservation des Sols (IGCS) avec le dictionnaire des données Donesol (cf. ressources associées à la fiche), s'appuyant sur la norme X31-560 cartographie des sols (acquisition et gestion informatique de données pédologiques en vue de leur utilisation en cartographie des sols). 
+(1) Données extraites de la base de données sur les sols d’Alsace -Base  au 1/100 000ème - version 2015. La constitution de cette base de données a été faite conformément au cahier des charges du programme national Inventaire Gestion et Conservation des Sols (IGCS) avec le dictionnaire des données Donesol (cf. ressources associées à la fiche), s'appuyant sur la norme X31-560 cartographie des sols (acquisition et gestion informatique de données pédologiques en vue de leur utilisation en cartographie des sols).
 Une unité cartographique de sol (UCS) peut être pure et composée d'un seul type de sol (UTS), ou complexe et composée de plusieurs types de sols dont on connaît les caractéristiques et dont on peut estimer le % de surface de présence dans l'unité cartographique.
 (2) Pour aboutir à une couche d'information représentant un paramètre par unité cartographique de sol, le processus de traitement de données suivant a été appliqué :
 -extraction du paramètre pour l'ensemble des types de sols (UTS) et extraction du % de surface que représente chaque type de sol dans une unité cartographique(UCS)
