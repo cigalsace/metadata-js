@@ -2,14 +2,14 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist main object
-     * @lends md
+     * lends md
      * @type {Object}
      */
     md.codeslists = {};
 
     /**
      * codeslist of type of date
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.ciDateTypeCode = [{
@@ -25,7 +25,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of topicCategories
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdTopicCategoryCode = [{
@@ -89,7 +89,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of character set
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdCharacterSetCode = [{
@@ -180,7 +180,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of contact role code
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.ciRoleCode = [{
@@ -220,7 +220,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of classification code
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdClassificationCode = [{
@@ -242,7 +242,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of Inspire restriction code
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdInspireRestrictionCode = [{
@@ -285,7 +285,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of Inspire topic categories
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdInspireTopicCategoryCode = [{
@@ -395,7 +395,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of Inspire specification code
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
 
@@ -432,7 +432,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of keyword type code
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdKeywordTypeCode = [{
@@ -455,7 +455,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of language code
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdLanguageCode = [{
@@ -471,7 +471,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of conformity pass code
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdPassCode = [{
@@ -488,7 +488,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of maintenance frequency code
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdMaintenanceFrequencyCode = [{
@@ -531,7 +531,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of restriction code
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdRestrictionCode = [{
@@ -562,7 +562,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of scope code
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdScopeCode = [{
@@ -620,7 +620,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of spatial representation type code
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdSpatialRepresentationTypeCode = [{
@@ -648,7 +648,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of linkage protocols
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdLinkageProtocolCode = [{
@@ -664,7 +664,7 @@ jQuery(function(md, undefined) {
 
     /**
      * codeslist of reference system codes
-     * @lends md.codeslist
+     * lends md.codeslist
      * @type {Object}
      */
     md.codeslists.mdReferenceSystemCode = [{

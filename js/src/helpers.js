@@ -1,11 +1,16 @@
-//js-joiner out: metadata.min.js, files: helpers.js config.js json-empty.js js-models.js xpaths.js MetadataXml.js, compress: false
+ /**
+  * Namespace for the app
+  * @namespace md
+  * @type {Object}
+  */
+ md = {};
 
 jQuery(function(md, undefined) {
     "use strict";
 
     /**
      * Generate UUID
-     * @lends md
+     * lends md
      * @return {string} UUID
      */
     md.guid = function() {
@@ -18,7 +23,7 @@ jQuery(function(md, undefined) {
 
     /**
      * Left padding a string with char to length
-     * @lends md
+     * lends md
      * @param {String} string - original string
      * @param {String} char - char to pad
      * @param {Integer} length - total length of final string
@@ -33,7 +38,7 @@ jQuery(function(md, undefined) {
 
     /**
      * Right padding a string with char to length
-     * @lends md
+     * lends md
      * @param {String} string - original string
      * @param {String} char - char to pad
      * @param {Integer} length - total length of final string
@@ -48,7 +53,7 @@ jQuery(function(md, undefined) {
 
     /**
      * Padding char to length
-     * @lends md
+     * lends md
      * @param {String} char - char to pad
      * @param {Integer} length - total length of final string
      * @return {string} UUID

@@ -2,14 +2,14 @@ jQuery(function(md, undefined) {
 
     /**
      * empty_json main object
-     * @lends md
+     * lends md
      * @type {Object}
      */
     md.empty_js = {};
 
     /**
      * Empty contact object
-     * @lends md.empty_json
+     * lends md.empty_json
      * @type {Array}
      */
     md.empty_js.contact = {
@@ -28,7 +28,7 @@ jQuery(function(md, undefined) {
 
     /**
      * Empty date object
-     * @lends md.empty_json
+     * lends md.empty_json
      * @type {Array}
      */
     md.empty_js.date = {

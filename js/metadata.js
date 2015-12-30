@@ -1,10 +1,9 @@
-
-/**
- * Namespace for the app
- * @namespace md
- * @type {Object}
- */
-md = {};
+ /**
+  * Namespace for the app
+  * @namespace md
+  * @type {Object}
+  */
+ md = {};
 
 jQuery(function(md, undefined) {
     "use strict";
@@ -91,10 +90,7 @@ jQuery(function(md, undefined) {
     if (['fr', 'en', 'de'].indexOf(config.userLang) == -1) { config.userLang = 'fr'; }
     */
 
-    /**
-     * List of languages to convert 2 char to 3 char values
-     * @type {Object}
-     */
+   // List of languages to convert 2 char to 3 char values
     md.languages = {
         fr: 'fre',
         en: 'eng',
@@ -1007,7 +1003,6 @@ jQuery(function(md, undefined) {
      * empty_json main object
      * lends md
      * @type {Object}
-     * @description empty js object
      */
     md.empty_js = {};
 

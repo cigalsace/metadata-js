@@ -2,7 +2,7 @@ jQuery(function(md, undefined) {
 
 /**
  * Xpath list to get data information in XML
- * @lends md
+ * lends md
  * @type {Object}
  */
 md.xpaths = {

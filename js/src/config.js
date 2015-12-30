@@ -1,13 +1,6 @@
 jQuery(function(md, undefined) {
 
     /**
-     * Namespace for the app
-     * @namespace
-     * @type {Object}
-     */
-    //md = {};
-
-    /**
      * Config variable
      * @type {Object}
      */
